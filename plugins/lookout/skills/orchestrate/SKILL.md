@@ -43,7 +43,7 @@ sh "${CLAUDE_PLUGIN_ROOT}/scripts/bun.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/watch.t
 
 Monitor, `timeout_ms` 1740000, `persistent` false (or run it as a background command: its exit wakes you). One line per chat that settles, needs input, hits a quota wall (with the reset time), starts waiting for its plan (`waiting for <model>'s plan until <time>`: it keeps watching, the chat goes on by itself), ends its turn onto a watch or background command of its own (`settled, its watch ... wakes it`, the watch's deadline named: not done, do not steer it; the turn it wakes is its settle) or has a workflow run asking, on any machine. It exits when the batch settles or a chat needs an answer, and prints a re-arm line at 29 minutes if work is still going; re-arm with the same `--cursor` file and it prints nothing twice.
 
-- `--machines "*"` covers this machine and every reachable one; name machines (`--machines denar-build,mac`) or watch one (`--machine denar-build`) instead. A remote machine's lines carry its name.
+- `--machines "*"` covers this machine and every reachable one; name machines (`--machines tally-build,mac`) or watch one (`--machine tally-build`) instead. A remote machine's lines carry its name.
 - Without `--lane-prefix` it watches every chat on the machine, including the user's own; a prefix is the batch.
 - One workflow run (Workflows lab): `--run <wfr_id>` instead of `--fleet` (`--machine <name>` for a run on another machine); a line when it ends, pauses, waits on a plan reset, asks, or one of its agents parks or fails, and it exits on an end or an ask.
 - One chat only: `--thread <id>`.
