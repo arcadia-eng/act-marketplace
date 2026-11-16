@@ -1,103 +1,89 @@
-# Lookout Marketplace
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/brand/arcadia-mark-white.svg">
+    <source media="(prefers-color-scheme: light)" srcset=".github/brand/arcadia-mark-black.svg">
+    <img alt="Arcadia" src=".github/brand/arcadia-mark-black.svg" width="80">
+  </picture>
+  <h1>Lookout Marketplace</h1>
+  <p>The Lookout plugin for Claude Code, and the connectors that bring your tools into a Lookout chat.</p>
+  <p><a href="#install-the-claude-code-plugin">Install</a> | <a href="#what-the-plugin-adds">What it adds</a> | <a href="#repository-layout">Layout</a> | <a href="#development">Development</a> | <a href="https://lookout.arcadia.is/marketplace">Marketplace</a></p>
+</div>
 
-Lookout is a coding agent harness that runs on your own model subscriptions. This repo is its official marketplace: the Lookout plugin for Claude Code, the listings feed the Lookout app reads, Lookout's connectors, and the Lookout MCP server.
+[![Lookout Marketplace](https://lookout.arcadia.is/og/marketplace.png)](https://lookout.arcadia.is/marketplace)
 
-## Claude Code plugin
+[Lookout](https://lookout.arcadia.is) is an agent harness across your model subscriptions, in any codebase, on any machine. This repository is its official marketplace.
 
-The `lookout` plugin drives a Lookout account from Claude Code. It hands tasks to Lookout chats on any model or machine the account has, steers and waits on them, reads provider quotas, and reviews what a chat changed. Its tools come from the MCP bridge bundled with the installed Lookout app or CLI.
+If you work in Claude Code, the Lookout plugin from here lets a session hand tasks to Lookout agents, steer their chats, and read your machines and plan usage. The Lookout app reads its official connectors from here too, and so does the [Marketplace](https://lookout.arcadia.is/marketplace) on Lookout's site.
 
-### Requirements
+> [!NOTE]
+> A Lookout account needs an invitation. Everything here works with one.
 
-- Claude Code
-- Lookout desktop app or CLI, installed and signed in
+## Install the Claude Code plugin
 
-### Install
+You need Claude Code, and the Lookout Mac app or the `lookout` command on the same machine. The plugin runs on Bun: yours, or the copy Lookout ships.
 
-```text
-/plugin marketplace add arcadia-eng/lookout-marketplace
-/plugin install lookout@lookout-marketplace
-/reload-plugins
+```sh
+claude plugin marketplace add arcadia-eng/lookout-marketplace   # add the marketplace
+claude plugin install lookout@lookout-marketplace               # install the plugin
 ```
 
-From a shell:
+Inside an open session, type the same two lines with `/plugin` in place of `claude plugin`. While Lookout is not running, each call says so, and the first call after it starts works. A machine without Lookout connects another way, described in [How it connects](https://lookout.arcadia.is/docs/other-apps#claude-code-connect).
 
-```bash
-claude plugin marketplace add arcadia-eng/lookout-marketplace
-claude plugin install lookout@lookout-marketplace
-```
+## What the plugin adds
 
-### What it adds
-
-| Component | Name | Purpose |
-|---|---|---|
-| MCP server | `lookout` | Lookout's tools: `lookout_delegate`, `lookout_check`, `lookout_fleet`, `lookout_steer`, `lookout_changes`, `lookout_machines`, `lookout_usage` and more |
-| Agent | `lookout:worker` | Hands one task to a Lookout chat, waits, and returns the reply |
-| Command | `/lookout:delegate` | Hand a task to Lookout, with optional `--model`, `--effort` and `--machine` |
-| Command | `/lookout:steer` | Send a follow-up into a chat |
-| Command | `/lookout:status` | Running chats, machines and provider quotas |
-| Command | `/lookout:machines` | List machines and select one |
-| Skill | `orchestrate` | Run a fleet of chats across lanes and machines |
-| Skill | `review` | Review the diff of a Lookout chat |
-| Skill | `models` | Pick a model by remaining plan quota |
-| Skill | `machines` | See and choose Lookout machines |
-| Skill | `vps-workers` | Enroll a Linux VPS and run chats on it |
-| Hook | `SessionStart` | Tells a new session which Lookout chats are running |
-| Status line | subagent | Count of running Lookout chats |
-
-The plugin connects whether or not Lookout is running; calls succeed once the app is up. It uses the Bun that Lookout ships when Bun is not installed.
-
-## Listings feed
-
-`listings.json` is the catalog the Lookout app reads. Each entry points at a listing's source. `listings.schema.json` and `scripts/validate-listings.ts` gate it.
-
-An install target whose host is `lookout` is a connector Lookout adds itself. It is remote and https only, and its `auth` names a sign-in policy built into Lookout, never a client. `audience`, when present, limits who sees an entry: one sha256 hex digest of `lookout-audience/1:<account user id>` per Lookout account.
-
-## Connectors
-
-| Connector | Server | Availability |
-|---|---|---|
-| [Gmail](connectors/gmail/) | Google's hosted Gmail MCP server | Preview |
-
-Each lives in `connectors/<id>/` as `plugin.json` and `mcp.json`, tagged `<id>-vX.Y.Z`.
-
-## Lookout MCP server
-
-`servers/lookout-mcp/` serves Lookout's tools over Streamable HTTP with OAuth 2.1, for MCP hosts such as Grok. Install and tools are in its README.
-
-## Repo layout
-
-| Path | Contents |
+| Part | What it does |
 |---|---|
-| `.claude-plugin/marketplace.json` | Claude Code marketplace index |
-| `plugins/lookout/` | Lookout plugin for Claude Code |
-| `listings.json` | Lookout listings feed |
-| `listings.schema.json`, `scripts/` | Feed schema and validator |
-| `connectors/` | Connectors Lookout adds |
-| `servers/lookout-mcp/` | Lookout MCP server |
-| `assets/` | Icons, pinned per tag |
+| `/lookout:delegate <brief>` | Hands a task to a Lookout agent and returns its result |
+| `/lookout:steer <threadId> <message>` | Sends a follow-up into a chat |
+| `/lookout:status` | Your chats, machines and provider quotas |
+| `/lookout:machines [name]` | Lists your machines, and picks one |
+| `/lookout:login` | Signs the plugin in to your account, on a machine without Lookout |
+| `lookout:worker` | A subagent that hands a bounded task to a Lookout agent, waits, and returns the result |
+| Skills | Run a fleet of chats (`orchestrate`), review what a chat changed (`review`), pick a model by quota (`models`), pick a machine (`machines`), run chats on a VPS (`vps-workers`) |
+| MCP server `lookout` | The same tools as Lookout's own MCP server |
+| Monitor, hook, status line | Tell a session when a chat it follows settles, asks or lands, and how many chats are running |
 
-## Versions
+## Repository layout
 
-The plugin's version lives in `plugins/lookout/.claude-plugin/plugin.json` and its marketplace entry, and is tagged `vX.Y.Z`. The server's version lives in `servers/lookout-mcp/package.json` and is tagged `lookout-mcp-vX.Y.Z`. A connector's lives in its `plugin.json` and is tagged `<id>-vX.Y.Z`. CI rejects drift.
+| Path | What it holds |
+|---|---|
+| `plugins/lookout/` | The Claude Code plugin |
+| `.claude-plugin/marketplace.json` | The marketplace index Claude Code reads |
+| `listings.json` | The listings feed the Lookout app reads |
+| `listings.schema.json`, `scripts/` | The feed's schema and its validator |
+| `connectors/` | Connectors Lookout adds itself: today [Gmail](connectors/gmail/), in preview |
+| `servers/lookout-mcp/` | A standalone MCP server for a Lookout on the same machine, over Streamable HTTP with OAuth 2.1 |
+| `assets/` | Listing icons, each pinned to a tag |
 
 ## Development
 
-```bash
-bun install
-bun run validate
-bun test
-bun run typecheck
-claude plugin validate --strict .
+```sh
+bun install                        # dependencies, the MCP server's included
+bun run validate                   # listings.json against its schema, versions and tags
+bun test                           # the feed, the marketplace index and the MCP server
+bun run typecheck                  # the MCP server's types
+claude plugin validate --strict .  # the marketplace as Claude Code reads it
 ```
 
-## Contributing
+## How a change lands
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+- The plugin is built in Lookout's own repository and published here by Lookout's release, as a commit `feat: lookout X.Y.Z` and a tag `vX.Y.Z`. Report a problem with it as an issue.
+- A listing, a connector or the MCP server changes through a pull request, one listing at a time. CI runs validate, test and typecheck, and the request lands as a merge commit.
+- The steps and the checklist are in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Documentation
+
+- [Claude Code plugin](https://lookout.arcadia.is/docs/other-apps#claude-code): install, how it connects, every part
+- [Connectors and skills](https://lookout.arcadia.is/docs/connectors-and-skills): connectors in Lookout
+- [Marketplace](https://lookout.arcadia.is/marketplace): the official connectors, with what each can and can't do
+- [`servers/lookout-mcp/`](servers/lookout-mcp/README.md): run the MCP server, its settings and its tools
+- [`connectors/gmail/`](connectors/gmail/README.md): what the Gmail connector reads and writes, and what it can't do
+- [`CONTRIBUTING.md`](CONTRIBUTING.md): add or change a listing
 
 ## Security
 
-See [SECURITY.md](SECURITY.md). Report vulnerabilities privately, not in a public issue.
+Report a vulnerability privately, from this repository's Security tab, as [SECURITY.md](SECURITY.md) says. Never put one in a public issue, and never paste a credential such as `LOOKOUT_MCP_TOKEN`.
 
 ## License
 
-MIT. See [LICENSE](LICENSE). Lookout and the Arcadia mark are Arcadia's. Gmail and its logo are Google's.
+MIT, see [LICENSE](LICENSE). Lookout and the Arcadia mark are Arcadia's; Gmail and its logo are Google's.
