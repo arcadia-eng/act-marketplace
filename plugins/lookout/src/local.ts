@@ -2,7 +2,7 @@
 // MCP bridge sends (`x-lookout-client: mcp`, and the app session from the
 // home's app-session.key: src/server/ontology/principal.ts forwardedHeaders).
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -25,16 +25,28 @@ export function machineBase(base: string, ref: string): string {
 
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
 
+// the app's home from before the rename: the old build runs on it until the renamed one's first start leaves it a link
+// to the new one (desktop/carry-over.mjs appHome, whose rule this copies: the plugin ships alone)
+const LEGACY_HOME = ".lookout";
+// the service a bridge from before the rename names in its /health (desktop/legacy.mjs mcpService)
+const LEGACY_MCP = "lookout-mcp";
+
+/** The running app's home: LOOKOUT_HOME, else the product's when it is there, else the old one while it is. */
+function appHome(env: Record<string, string | undefined>): string {
+  const own = join(homedir(), ".lookout"), old = join(homedir(), LEGACY_HOME);
+  return env.LOOKOUT_HOME?.trim() || (!existsSync(own) && existsSync(old) ? old : own);
+}
+
 /**
- * The app session this machine's Lookout home holds (LOOKOUT_HOME, else ~/.lookout), for a loopback base only:
- * the app's server answers no /api request without it. Empty before the app has ever run.
+ * The app session this machine's Lookout home holds (appHome), for a loopback base only: the app's server answers no
+ * /api request without it. Empty before the app has ever run.
  */
 export function sessionHeaders(base: string, env: Record<string, string | undefined> = process.env): Record<string, string> {
   let host: string;
   try { host = new URL(base).hostname; } catch { return {}; }
   if (!LOOPBACK.has(host)) return {};
   try {
-    const secret = readFileSync(join(env.LOOKOUT_HOME?.trim() || join(homedir(), ".lookout"), "app-session.key"), "utf8").trim();
+    const secret = readFileSync(join(appHome(env), "app-session.key"), "utf8").trim();
     return secret ? { [SESSION_HEADER]: secret } : {};
   } catch { return {}; }
 }
@@ -63,5 +75,5 @@ export async function probeApp(base: string, ms = 400, fetchFn?: typeof fetch): 
 
 export async function probeBridge(origin: string, ms = 400, fetchFn: typeof fetch = fetch): Promise<boolean> {
   const body = await localGet(origin, "/health", ms, fetchFn);
-  return !!body && typeof body === "object" && (body as { service?: string }).service === "lookout-mcp";
+  return !!body && typeof body === "object" && ["lookout-mcp", LEGACY_MCP].includes(String((body as { service?: string }).service));
 }
