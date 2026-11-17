@@ -78,6 +78,6 @@ conversation, or one an earlier launch parked), `fresh: true` (never reuse a res
 ## Picking models
 
 Set `model` per agent as a fallback list, strongest acceptable first, so a spent plan moves the agent instead of
-parking it: for example `["claude-opus-5-5", "gpt-6.1-sol", "grok-4.7"]` for reviews and build agents. Mix two
+parking it: for example `["claude-opus-5-5", "gpt-6.2-sol", "grok-4.7"]` for reviews and build agents. Mix two
 families across independent review lenses. Use a smaller model for bounded mechanical stages. Never list a model the
 user is not fine spending, and never a per-token id unless the user named it. The `models` skill reads the plans.
