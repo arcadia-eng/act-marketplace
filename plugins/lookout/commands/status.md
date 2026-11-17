@@ -1,8 +1,8 @@
 ---
-description: Fleet, machines, and provider quotas for this Lookout account
+description: Fleet, machines, and provider quotas for this Act account
 ---
 
-Show Lookout's fleet, machines, and quotas.
+Show Act's fleet, machines, and quotas.
 
 Run this and return its stdout as the report. Do not paraphrase it.
 
@@ -10,11 +10,11 @@ Run this and return its stdout as the report. Do not paraphrase it.
 sh "${CLAUDE_PLUGIN_ROOT}/scripts/bun.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/status.ts"
 ```
 
-If the report says the local app is not answering, call the `lookout` MCP tools instead, once each, and report those:
+If the report says the local app is not answering, call the `act` MCP tools instead, once each, and report those:
 
-- `lookout_status`
-- `lookout_machines`
-- `lookout_usage`
-- `lookout_fleet` with `states: ["running", "needs_input", "failed", "quota", "background"]`
+- `act_status`
+- `act_machines`
+- `act_usage`
+- `act_fleet` with `states: ["running", "needs_input", "failed", "quota", "background"]`
 
 Do not poll. One call each.

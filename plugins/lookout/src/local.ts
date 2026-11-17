@@ -1,5 +1,5 @@
-// Loopback reads of the Lookout app. The headers are the same contract the
-// MCP bridge sends (`x-lookout-client: mcp`, and the app session from the
+// Loopback reads of the Act app. The headers are the same contract the
+// MCP bridge sends (`x-act-client: mcp`, and the app session from the
 // home's app-session.key: src/server/ontology/principal.ts forwardedHeaders).
 
 import { existsSync, readFileSync } from "node:fs";
@@ -31,14 +31,14 @@ const LEGACY_HOME = ".lookout";
 // the service a bridge from before the rename names in its /health (desktop/legacy.mjs mcpService)
 const LEGACY_MCP = "lookout-mcp";
 
-/** The running app's home: LOOKOUT_HOME, else the product's when it is there, else the old one while it is. */
+/** The running app's home: ACT_HOME, else the product's when it is there, else the old one while it is. */
 function appHome(env: Record<string, string | undefined>): string {
-  const own = join(homedir(), ".lookout"), old = join(homedir(), LEGACY_HOME);
-  return env.LOOKOUT_HOME?.trim() || (!existsSync(own) && existsSync(old) ? old : own);
+  const own = join(homedir(), ".act"), old = join(homedir(), LEGACY_HOME);
+  return env.ACT_HOME?.trim() || (!existsSync(own) && existsSync(old) ? old : own);
 }
 
 /**
- * The app session this machine's Lookout home holds (appHome), for a loopback base only: the app's server answers no
+ * The app session this machine's Act home holds (appHome), for a loopback base only: the app's server answers no
  * /api request without it. Empty before the app has ever run.
  */
 export function sessionHeaders(base: string, env: Record<string, string | undefined> = process.env): Record<string, string> {
@@ -75,5 +75,5 @@ export async function probeApp(base: string, ms = 400, fetchFn?: typeof fetch): 
 
 export async function probeBridge(origin: string, ms = 400, fetchFn: typeof fetch = fetch): Promise<boolean> {
   const body = await localGet(origin, "/health", ms, fetchFn);
-  return !!body && typeof body === "object" && ["lookout-mcp", LEGACY_MCP].includes(String((body as { service?: string }).service));
+  return !!body && typeof body === "object" && ["act-mcp", LEGACY_MCP].includes(String((body as { service?: string }).service));
 }

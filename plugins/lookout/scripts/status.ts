@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// /lookout:status against the local app. Prints a fixed report. When the
+// /act:status against the local app. Prints a fixed report. When the
 // app is down, says so and stops: the command then uses the MCP tools,
 // which cover the remote account too.
 
@@ -7,10 +7,10 @@ import { renderStatus, type LaneSnap, type MachineSnap, type ProviderSnap } from
 import { localGet } from "../src/local.js";
 import { LOCAL_APP_URL } from "../src/target.js";
 
-const base = (process.env.LOOKOUT_URL ?? LOCAL_APP_URL).replace(/\/$/, "");
+const base = (process.env.ACT_URL ?? LOCAL_APP_URL).replace(/\/$/, "");
 const health = await localGet(base, "/api/health", 1500);
 if (!health) {
-  console.log(`Local Lookout is not answering at ${base}. Use the lookout MCP tools (lookout_status, lookout_machines, lookout_usage) for the remote account.`);
+  console.log(`Local Act is not answering at ${base}. Use the act MCP tools (act_status, act_machines, act_usage) for the remote account.`);
   process.exit(0);
 }
 

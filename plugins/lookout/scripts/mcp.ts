@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
-// Claude Code's MCP entry. Starts the Lookout bridge on stdio whenever this
+// Claude Code's MCP entry. Starts the Act bridge on stdio whenever this
 // machine has one (a checkout, or the installed app's own copy), at once and
-// whether or not Lookout is running: the bridge lists its tools from its own
-// manifest and answers each call with "Lookout is not running" until the app
+// whether or not Act is running: the bridge lists its tools from its own
+// manifest and answers each call with "Act is not running" until the app
 // is up, so Claude Code never caches a failed server and nothing needs
 // /plugin to come back. Without a bridge on disk: the HTTP bridge already
 // listening, or the hosted MCP with the saved OAuth token. Does not bind 8789
@@ -19,11 +19,11 @@ import { readBearer } from "../src/token.js";
 const env = process.env;
 
 function starts(): string[] {
-  return [env.LOOKOUT_ROOT ?? "", env.CLAUDE_PLUGIN_ROOT ?? "", import.meta.dir, process.cwd()];
+  return [env.ACT_ROOT ?? "", env.CLAUDE_PLUGIN_ROOT ?? "", import.meta.dir, process.cwd()];
 }
 
 async function probe(): Promise<{ appUp: boolean; bridgeUp: boolean }> {
-  if (env.LOOKOUT_URL?.trim()) return { appUp: false, bridgeUp: false };
+  if (env.ACT_URL?.trim()) return { appUp: false, bridgeUp: false };
   const [appUp, bridgeUp] = await Promise.all([
     probeApp(LOCAL_APP_URL),
     probeBridge(LOCAL_BRIDGE_ORIGIN),
@@ -31,13 +31,13 @@ async function probe(): Promise<{ appUp: boolean; bridgeUp: boolean }> {
   return { appUp, bridgeUp };
 }
 
-async function runStdio(bridge: Bridge, lookoutUrl: string): Promise<void> {
-  console.error(`lookout mcp: stdio bridge (${bridge.entry}) → ${lookoutUrl}`);
+async function runStdio(bridge: Bridge, actUrl: string): Promise<void> {
+  console.error(`act mcp: stdio bridge (${bridge.entry}) → ${actUrl}`);
   const proc = Bun.spawn([bridge.bun, bridge.entry], {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
-    env: { ...env, LOOKOUT_URL: lookoutUrl, LOOKOUT_MCP_VIA: env.LOOKOUT_MCP_VIA?.trim() || "Claude Code", LOOKOUT_MCP_CLIENT_ID: env.LOOKOUT_MCP_CLIENT_ID?.trim() || "claude-code" },
+    env: { ...env, ACT_URL: actUrl, ACT_MCP_VIA: env.ACT_MCP_VIA?.trim() || "Claude Code", ACT_MCP_CLIENT_ID: env.ACT_MCP_CLIENT_ID?.trim() || "claude-code" },
   });
   const code = await proc.exited;
   process.exit(code ?? 1);
@@ -51,8 +51,8 @@ function write(message: unknown) {
 async function bearerFor(target: Target, stored: StoredOAuth | null, path: string): Promise<{ token: string | null; stored: StoredOAuth | null }> {
   if (target.mode === "http") {
     const read = readBearer(env);
-    if (read.error) console.error(`lookout mcp: ${read.error}`);
-    if (!read.token) console.error("lookout mcp: local bridge is up but no bearer was found. Set LOOKOUT_MCP_TOKEN. Nothing secret was printed.");
+    if (read.error) console.error(`act mcp: ${read.error}`);
+    if (!read.token) console.error("act mcp: local bridge is up but no bearer was found. Set ACT_MCP_TOKEN. Nothing secret was printed.");
     return { token: read.token, stored };
   }
   if (target.mode !== "remote" || !stored) return { token: null, stored };
@@ -63,15 +63,15 @@ async function bearerFor(target: Target, stored: StoredOAuth | null, path: strin
     }
     return { token: next.accessToken ?? null, stored: next };
   } catch (e) {
-    console.error(`lookout mcp: ${e instanceof Error ? e.message : "could not refresh the remote sign-in"}`);
+    console.error(`act mcp: ${e instanceof Error ? e.message : "could not refresh the remote sign-in"}`);
     return { token: stored.accessToken ?? null, stored };
   }
 }
 
 async function proxy(target: Extract<Target, { mode: "http" | "remote" }>) {
   const where = target.mode === "http" ? target.mcpUrl : target.mcpUrl;
-  console.error(`lookout mcp: ${target.mode} → ${where}`);
-  // the sign-in and the file it came from: Claude's plugin data dir (/lookout:login), else the shared config file
+  console.error(`act mcp: ${target.mode} → ${where}`);
+  // the sign-in and the file it came from: Claude's plugin data dir (/act:login), else the shared config file
   const found = target.mode === "remote" ? findOAuth(env) : null;
   let path = found?.path ?? oauthPath(env);
   let stored = found?.stored ?? null;
@@ -94,7 +94,7 @@ async function proxy(target: Extract<Target, { mode: "http" | "remote" }>) {
       if (isRequest) write(result.response);
       continue;
     }
-    // a sign-in saved since this process started (/lookout:login) is taken up here, no restart needed
+    // a sign-in saved since this process started (/act:login) is taken up here, no restart needed
     const signedIn = result.status === 401 && target.mode === "remote" ? findOAuth(env) : null;
     if (signedIn && signedIn.stored.accessToken !== stored?.accessToken) {
       path = signedIn.path;
@@ -108,7 +108,7 @@ async function proxy(target: Extract<Target, { mode: "http" | "remote" }>) {
         auth = { token: stored.accessToken ?? null, stored };
         result = await forwardRpc(message, { mcpUrl: target.mcpUrl, token: auth.token, sessionId });
       } catch (e) {
-        console.error(`lookout mcp: ${e instanceof Error ? e.message : "refresh failed"}`);
+        console.error(`act mcp: ${e instanceof Error ? e.message : "refresh failed"}`);
       }
     }
     sessionId = result.sessionId;
@@ -118,21 +118,21 @@ async function proxy(target: Extract<Target, { mode: "http" | "remote" }>) {
 }
 
 // The bridge on disk decides first: with one, no probe (and no wait) at all.
-const bridge = env.LOOKOUT_MCP_REMOTE === "1" ? null : findBridge(starts());
+const bridge = env.ACT_MCP_REMOTE === "1" ? null : findBridge(starts());
 const probeResult = bridge ? null : await probe();
 const chosen = chooseTarget(env, probeResult, { stdioOnDisk: !!bridge });
 const resolved = resolveTarget(chosen, { stdioEntry: bridge?.entry ?? null, bridgeUp: probeResult?.bridgeUp ?? false });
 
 if (resolved.mode === "missing") {
-  console.error(`lookout mcp: ${resolved.reason}`);
+  console.error(`act mcp: ${resolved.reason}`);
   process.exit(1);
 }
 if (resolved.mode === "stdio") {
   if (!bridge) {
-    console.error("lookout mcp: stdio entry disappeared");
+    console.error("act mcp: stdio entry disappeared");
     process.exit(1);
   }
-  await runStdio(bridge, resolved.lookoutUrl);
+  await runStdio(bridge, resolved.actUrl);
 } else {
   await proxy(resolved);
 }

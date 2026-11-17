@@ -1,9 +1,9 @@
 // Where the stdio bridge (`src/mcp/stdio.ts`) is on this machine. A checkout
-// (LOOKOUT_ROOT, the plugin's own tree, the session's folder) wins; otherwise
-// the installed Lookout's own pinned copy: the Mac app's snapshot, or the
-// headless install under ~/.lookout/cli. A plugin installed from the
+// (ACT_ROOT, the plugin's own tree, the session's folder) wins; otherwise
+// the installed Act's own pinned copy: the Mac app's snapshot, or the
+// headless install under ~/.act/cli. A plugin installed from the
 // marketplace lives in Claude Code's cache with no src/mcp of its own, so the
-// installed app is what lets it start the bridge even while Lookout is down.
+// installed app is what lets it start the bridge even while Act is down.
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -32,20 +32,20 @@ export function findStdioEntry(starts: readonly string[], limit = 8): string | n
 /** A bridge to run: its entry, and the bun that runs it (the install's own when it ships one). */
 export interface Bridge { entry: string; bun: string }
 
-/** The installed Lookouts' pinned trees, each with the bun it ships. */
+/** The installed Acts' pinned trees, each with the bun it ships. */
 export function installedRoots(home = homedir()): { root: string; bun: string }[] {
   const app = (base: string) => {
-    const root = join(base, "Lookout.app", "Contents", "Resources", "app.asar.unpacked", "snapshot");
+    const root = join(base, "Act.app", "Contents", "Resources", "app.asar.unpacked", "snapshot");
     return { root, bun: join(root, "bin", "bun") };
   };
   return [
     app("/Applications"),
     app(join(home, "Applications")),
-    { root: join(home, ".lookout", "cli", "current"), bun: join(home, ".lookout", "cli", "bun", "bin", "bun") },
+    { root: join(home, ".act", "cli", "current"), bun: join(home, ".act", "cli", "bun", "bin", "bun") },
   ];
 }
 
-/** The bridge for this session: a checkout first, then an installed Lookout; null when neither has one. */
+/** The bridge for this session: a checkout first, then an installed Act; null when neither has one. */
 export function findBridge(starts: readonly string[], installed = installedRoots()): Bridge | null {
   const fromCheckout = findStdioEntry(starts);
   if (fromCheckout) return { entry: fromCheckout, bun: "bun" };

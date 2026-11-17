@@ -16,7 +16,7 @@ export interface StoredOAuth {
 }
 
 export function oauthPath(env: Record<string, string | undefined>, home = homedir()): string {
-  if (env.LOOKOUT_MCP_OAUTH_FILE?.trim()) return env.LOOKOUT_MCP_OAUTH_FILE.trim();
+  if (env.ACT_MCP_OAUTH_FILE?.trim()) return env.ACT_MCP_OAUTH_FILE.trim();
   if (env.CLAUDE_PLUGIN_DATA?.trim()) return join(env.CLAUDE_PLUGIN_DATA.trim(), "oauth.json");
   const base = env.XDG_CONFIG_HOME?.trim() || join(home, ".config");
   return join(base, "lookout", "claude-plugin-oauth.json");
@@ -46,11 +46,11 @@ export function readOAuthFile(path: string): StoredOAuth | null {
 
 /**
  * Where a sign-in may be saved, in the order the MCP entry reads them: an explicit file alone; else Claude's plugin
- * data dir (what /lookout:login writes), then the config file a sign-in run outside Claude Code writes.
+ * data dir (what /act:login writes), then the config file a sign-in run outside Claude Code writes.
  */
 export function oauthPaths(env: Record<string, string | undefined>, home = homedir()): string[] {
   const first = oauthPath(env, home);
-  if (env.LOOKOUT_MCP_OAUTH_FILE?.trim()) return [first];
+  if (env.ACT_MCP_OAUTH_FILE?.trim()) return [first];
   const shared = oauthPath({ ...env, CLAUDE_PLUGIN_DATA: undefined }, home);
   return first === shared ? [first] : [first, shared];
 }

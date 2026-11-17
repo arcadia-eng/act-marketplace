@@ -1,19 +1,19 @@
 #!/usr/bin/env bun
-// Sign this plugin in to the hosted Lookout MCP (OAuth, PKCE, loopback
-// redirect). In Claude Code it runs as /lookout:login, which hands it the
+// Sign this plugin in to the hosted Act MCP (OAuth, PKCE, loopback
+// redirect). In Claude Code it runs as /act:login, which hands it the
 // plugin data dir (CLAUDE_PLUGIN_DATA is not in the Bash tool's environment);
 // from a terminal the tokens go to ~/.config/lookout/claude-plugin-oauth.json,
 // which the MCP entry reads too. Mode 0600, never printed. The local app does
-// not need this: stdio and the local bridge use the machine's own Lookout.
+// not need this: stdio and the local bridge use the machine's own Act.
 
 import { createServer } from "node:http";
 import { randomBytes } from "node:crypto";
 import { exchangeCode, oauthPath, pkcePair, writeOAuthFile } from "../src/oauth.js";
 import { REMOTE_MCP_URL } from "../src/target.js";
 
-const mcpUrl = (process.env.LOOKOUT_MCP_REMOTE_URL ?? REMOTE_MCP_URL).replace(/\/$/, "");
+const mcpUrl = (process.env.ACT_MCP_REMOTE_URL ?? REMOTE_MCP_URL).replace(/\/$/, "");
 const { origin, pathname } = new URL(mcpUrl);
-console.error(`login: ${mcpUrl} serves the Lookout account that runs it. To reach your own machines, install the Lookout app or CLI on this machine instead: the plugin then uses it, with no sign-in.`);
+console.error(`login: ${mcpUrl} serves the Act account that runs it. To reach your own machines, install the Act app or CLI on this machine instead: the plugin then uses it, with no sign-in.`);
 const metaUrl = `${origin}/.well-known/oauth-authorization-server${pathname === "/" ? "" : pathname}`;
 
 function openBrowser(url: string) {
@@ -50,7 +50,7 @@ const reg = await fetch(meta.registration_endpoint, {
   headers: { "content-type": "application/json", accept: "application/json" },
   body: JSON.stringify({
     redirect_uris: [redirectUri],
-    client_name: "Claude Code (Lookout)",
+    client_name: "Claude Code (Act)",
     grant_types: ["authorization_code", "refresh_token"],
     response_types: ["code"],
     token_endpoint_auth_method: "none",
@@ -91,13 +91,13 @@ try {
     const err = url.searchParams.get("error");
     const value = url.searchParams.get("code");
     if (got !== state || err || !value) {
-      res.writeHead(400, { "content-type": "text/plain" }).end(err ? `Lookout sign-in was declined (${err}).` : "Lookout sign-in did not complete.");
+      res.writeHead(400, { "content-type": "text/plain" }).end(err ? `Act sign-in was declined (${err}).` : "Act sign-in did not complete.");
       clearTimeout(timer);
       server.close();
       reject(new Error(err ? `sign-in declined (${err})` : "sign-in did not complete"));
       return;
     }
-    res.writeHead(200, { "content-type": "text/plain" }).end("Lookout is signed in. You can close this tab.");
+    res.writeHead(200, { "content-type": "text/plain" }).end("Act is signed in. You can close this tab.");
     clearTimeout(timer);
     server.close();
     resolve(value);

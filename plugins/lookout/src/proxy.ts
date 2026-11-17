@@ -38,14 +38,14 @@ export function parseMcpBody(contentType: string, text: string): unknown | null 
 
 export function signInMessage(remote: boolean): string {
   return remote
-    ? "Lookout's hosted MCP needs a sign-in: run /lookout:login, then call again (if the lookout server shows as failed, reconnect it in /mcp). No token was printed."
-    : "The local Lookout bridge refused the bearer. Set LOOKOUT_MCP_TOKEN, or check the token file. The token was not printed.";
+    ? "Act's hosted MCP needs a sign-in: run /act:login, then call again (if the act server shows as failed, reconnect it in /mcp). No token was printed."
+    : "The local Act bridge refused the bearer. Set ACT_MCP_TOKEN, or check the token file. The token was not printed.";
 }
 
 /** A forward that reached nothing: where it tried, and that the next call tries again. */
 export function unreachableMessage(mcpUrl: string, e: unknown): string {
   const why = e instanceof Error ? e.message : String(e);
-  return `Lookout's MCP at ${mcpUrl} is not answering (${why}): Lookout is starting or not running. This connection stays up; call again once it is.`;
+  return `Act's MCP at ${mcpUrl} is not answering (${why}): Act is starting or not running. This connection stays up; call again once it is.`;
 }
 
 export async function forwardRpc(message: unknown, input: ForwardInput): Promise<ForwardResult> {
@@ -75,6 +75,6 @@ export async function forwardRpc(message: unknown, input: ForwardInput): Promise
     return { response: parseMcpBody(res.headers.get("content-type") ?? "", text), sessionId, status: res.status };
   } catch {
     const id = message && typeof message === "object" && "id" in message ? (message as { id: unknown }).id : null;
-    return { response: rpcError(id, `Lookout MCP returned a body that was not JSON (HTTP ${res.status}).`), sessionId, status: res.status };
+    return { response: rpcError(id, `Act MCP returned a body that was not JSON (HTTP ${res.status}).`), sessionId, status: res.status };
   }
 }

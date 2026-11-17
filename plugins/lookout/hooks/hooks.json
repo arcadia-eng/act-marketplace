@@ -1,5 +1,5 @@
 {
-  "description": "Tell a new Claude Code session when Lookout already has chats running.",
+  "description": "Tell a new Claude Code session when Act already has chats running.",
   "hooks": {
     "SessionStart": [
       {

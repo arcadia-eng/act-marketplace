@@ -1,4 +1,4 @@
-// Text for /lookout:status, the session-start hook, and the status line.
+// Text for /act:status, the session-start hook, and the status line.
 // Credential fields are dropped on purpose: this is a glance, not a dump.
 
 export interface MeterSnap {
@@ -44,13 +44,13 @@ export function runningSegment(lanes: readonly LaneSnap[]): string {
   const live = liveLanes(lanes);
   if (!live.length) return "";
   const needs = live.filter(l => l.state === "needs_input").length;
-  const base = `lookout ${live.length} running`;
+  const base = `act ${live.length} running`;
   return needs ? `${base}, ${needs} need input` : base;
 }
 
 export function fleetLines(lanes: readonly LaneSnap[]): string[] {
   const live = liveLanes(lanes);
-  if (!live.length) return ["No Lookout chats are running."];
+  if (!live.length) return ["No Act chats are running."];
   return live.map(l => {
     const title = l.title?.trim() || l.threadId;
     const lane = l.lane ? ` lane ${l.lane}` : "";
@@ -90,10 +90,10 @@ export interface StatusInput {
   notes?: readonly string[];
 }
 
-/** The /lookout:status report. Never includes credential objects. */
+/** The /act:status report. Never includes credential objects. */
 export function renderStatus(input: StatusInput): string {
   const parts = [
-    `Lookout at ${input.app}`,
+    `Act at ${input.app}`,
     "",
     "Running",
     ...fleetLines(input.lanes),

@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// One line per event over a batch of Lookout chats, or one workflow run,
+// One line per event over a batch of Act chats, or one workflow run,
 // then exit when the batch settles or a chat needs an answer. Claude Code's
 // Monitor turns each line into a wake-up, and a background command's exit
 // wakes the session: arm one watcher per batch, not one per chat. Stays
@@ -14,7 +14,7 @@
 //   bun scripts/watch.ts --follow --forever                                  the plugin's monitor: what follow.json names
 //   bun scripts/watch.ts --follow --add|--remove [--lane-prefix p]... [--thread <id>]... [--machines m]
 //
-// Every mode takes --url <lookout> (LOOKOUT_URL), --cursor <file> (what the
+// Every mode takes --url <act> (ACT_URL), --cursor <file> (what the
 // last arm saw, so a re-arm prints no event twice) and --until all-settled
 // (the only exit mode; it is the default).
 //
@@ -386,7 +386,7 @@ const machinesFlag = flag(argv, "--machines");
 const lanePrefixes = flags(argv, "--lane-prefix");
 const lanePrefix = follow ? null : lanePrefixes[0] ?? null;
 const until = flag(argv, "--until");
-const base = (flag(argv, "--url") ?? process.env.LOOKOUT_URL ?? "http://127.0.0.1:8789").replace(/\/$/, "");
+const base = (flag(argv, "--url") ?? process.env.ACT_URL ?? "http://127.0.0.1:8789").replace(/\/$/, "");
 const cursorPath = flag(argv, "--cursor");
 const followFile = cursorPath ?? join(pluginDataDir(), "follow.json");
 const asJson = argv.includes("--json");
@@ -396,7 +396,7 @@ const removing = argv.includes("--remove");
 const editing = adding || removing;
 /** The plugin's monitor: no filter of its own, it follows what follow.json names. */
 const monitor = follow && forever && !editing && !lanePrefixes.length && !threadIds.length;
-const maxMs = Number(process.env.LOOKOUT_WATCH_MAX_MS ?? WATCH_MAX_MS);
+const maxMs = Number(process.env.ACT_WATCH_MAX_MS ?? WATCH_MAX_MS);
 const deadline = forever ? Infinity : Date.now() + (Number.isFinite(maxMs) && maxMs > 0 ? maxMs : WATCH_MAX_MS);
 
 // --machine names a fleet's one machine, or with --run the machine the run lives on
@@ -576,7 +576,7 @@ const monitorNotes = new Set<string>();
 async function watchSources(spec: Spec = cliSpec, stop?: AbortSignal): Promise<void> {
   const { targets, notes } = await resolveTargets(spec.reach);
   if (stop?.aborted) return;
-  for (const n of notes) if (!monitor || !monitorNotes.has(n)) { monitorNotes.add(n); note(`[lookout] ${n}`); }
+  for (const n of notes) if (!monitor || !monitorNotes.has(n)) { monitorNotes.add(n); note(`[act] ${n}`); }
   if (!targets.length) {
     if (!monitor) usage("no machine to watch");
     await Promise.race([Bun.sleep(60_000), new Promise(res => stop?.addEventListener("abort", res, { once: true }))]);
@@ -719,7 +719,7 @@ async function watchSources(spec: Spec = cliSpec, stop?: AbortSignal): Promise<v
       }
       const more = rt.flatMap(r => [...(r.off?.values() ?? [])]);
       if (rt.some(r => live(r) && !r.pageComplete && r.off === null))
-        emit("[lookout] part of the fleet was cut off this read and could not be judged.");
+        emit("[act] part of the fleet was cut off this read and could not be judged.");
       emit(fleetDeadline(rt.flatMap(r => r.rows), more));
       process.exit(0);
     }
@@ -747,18 +747,18 @@ async function watchSources(spec: Spec = cliSpec, stop?: AbortSignal): Promise<v
         else if (r.state !== "down") r.state = "retrying";
         if (!downTold.has(r.t.api) && Date.now() - r.failingSince >= DOWN_TELL_MS) {
           downTold.add(r.t.api);
-          note(`[lookout] ${name} has not answered for ${Math.round((Date.now() - r.failingSince) / 60_000)} min (${why(o)}); still following and retrying, nothing to arm again`);
+          note(`[act] ${name} has not answered for ${Math.round((Date.now() - r.failingSince) / 60_000)} min (${why(o)}); still following and retrying, nothing to arm again`);
         }
       } else if (r.state !== "down" && r.fails >= DOWN_AFTER) {
         r.state = "down";
-        note(`[lookout] ${name} stopped answering (${why(o)}), not watched until it answers again`);
+        note(`[act] ${name} stopped answering (${why(o)}), not watched until it answers again`);
       } else if (r.state !== "down") {
         r.state = "retrying";
-        if (!r.told) note(`[lookout] ${name} ${o.ok ? "answered nothing readable" : o.timedOutS ? `is slow (${why(o)})` : `did not answer (${why(o)})`}, still watched; trying again`);
+        if (!r.told) note(`[act] ${name} ${o.ok ? "answered nothing readable" : o.timedOutS ? `is slow (${why(o)})` : `did not answer (${why(o)})`}, still watched; trying again`);
       }
       r.told = true;
     } else {
-      if (wasDown && !forever) note(`[lookout] ${name} answers again, watched again`);
+      if (wasDown && !forever) note(`[act] ${name} answers again, watched again`);
       downTold.delete(r.t.api);
       Object.assign(r, { state: "ok", misses: 0, fails: 0, told: false, failingSince: 0 });
       for (const e of out.events) emitEvent(e);
@@ -769,18 +769,18 @@ async function watchSources(spec: Spec = cliSpec, stop?: AbortSignal): Promise<v
     if (follow) {
       // a follow watcher outlives a quiet fleet and an app restart: it never exits before its cap
       if (!quietTold && !forever && rt.every(x => live(x) && x.rows.length === 0 && x.pageComplete)) {
-        note(`[lookout] follow: nothing matches ${desc} yet; still following`);
+        note(`[act] follow: nothing matches ${desc} yet; still following`);
         quietTold = true;
       }
       pending.set(r, readOnce(r));
       continue;
     }
     if (rt.every(x => x.state === "down")) {
-      emit("[lookout] fleet could not be watched (no machine answered).");
+      emit("[act] fleet could not be watched (no machine answered).");
       process.exit(0);
     }
     if (rt.every(x => live(x) && x.rows.length === 0 && x.pageComplete)) {
-      emit(`[lookout] fleet: no chats to watch${lanePrefix !== null ? ` under lane prefix ${lanePrefix}` : ""}.`);
+      emit(`[act] fleet: no chats to watch${lanePrefix !== null ? ` under lane prefix ${lanePrefix}` : ""}.`);
       process.exit(0);
     }
     // a cut page of settled rows is not the batch: omitted queued, new, asking, parked, or interrupted chats still count.
@@ -802,9 +802,9 @@ async function watchRun(): Promise<never> {
   let machine: string | undefined;
   if (machineFlag !== null) {
     const { targets, notes } = await resolveTargets();
-    for (const n of notes) emit(`[lookout] ${n}`);
+    for (const n of notes) emit(`[act] ${n}`);
     const t = targets[0];
-    if (!t) { emit(`[lookout] run ${run} could not be watched (${machineFlag} is not reachable).`); process.exit(0); }
+    if (!t) { emit(`[act] run ${run} could not be watched (${machineFlag} is not reachable).`); process.exit(0); }
     api = t.api;
     machine = t.here ? undefined : t.label;
   }
@@ -822,12 +822,12 @@ async function watchRun(): Promise<never> {
     first = await read(api, path(0));
   }
   if (!first.ok) {
-    emit(`[lookout] ${machine ? `${machine}: ` : ""}run ${run} could not be watched (${why(first)}).`);
+    emit(`[act] ${machine ? `${machine}: ` : ""}run ${run} could not be watched (${why(first)}).`);
     process.exit(0);
   }
   let parsed = runSnapOf(run, first.body);
   if (!parsed) {
-    emit(`[lookout] ${machine ? `${machine}: ` : ""}run ${run} could not be read.`);
+    emit(`[act] ${machine ? `${machine}: ` : ""}run ${run} could not be read.`);
     process.exit(0);
   }
   for (;;) {
@@ -857,7 +857,7 @@ async function watchRun(): Promise<never> {
         continue;
       }
     }
-    // Lookout went away, or answered nothing readable: a pause, then the same wait again
+    // Act went away, or answered nothing readable: a pause, then the same wait again
     await Bun.sleep(1000);
   }
 }
@@ -932,10 +932,10 @@ function editFollowFile(): never {
     writeCursor(followFile, JSON.stringify({ ...file, follows: want }));
     Bun.sleepSync(150);
   }
-  emit(`[lookout] follow.json follows ${followsLabel(want!)}.`);
+  emit(`[act] follow.json follows ${followsLabel(want!)}.`);
   const mons = liveMonitors();
-  if (mons.length) emit(`[lookout] the monitor (pid ${mons.join(", ")}) takes it up within ${FOLLOWS_POLL_MS / 1000} s; nothing to arm.`);
-  else emit(`[lookout] no monitor runs on this file (plugin monitors start only in interactive sessions): arm Monitor with persistent true and no timeout_ms on: sh "${join(import.meta.dir, "bun.sh")}" "${import.meta.path}" --follow --forever --cursor "${followFile}"`);
+  if (mons.length) emit(`[act] the monitor (pid ${mons.join(", ")}) takes it up within ${FOLLOWS_POLL_MS / 1000} s; nothing to arm.`);
+  else emit(`[act] no monitor runs on this file (plugin monitors start only in interactive sessions): arm Monitor with persistent true and no timeout_ms on: sh "${join(import.meta.dir, "bun.sh")}" "${import.meta.path}" --follow --forever --cursor "${followFile}"`);
   process.exit(0);
 }
 
@@ -970,7 +970,7 @@ else {
       signal: ctrl.signal,
     });
     if (!res.ok || !res.body) {
-      emitUnseen(watchLine(thread, first) ?? `[lookout] ${thread} could not be watched (HTTP ${res.status}).`);
+      emitUnseen(watchLine(thread, first) ?? `[act] ${thread} could not be watched (HTTP ${res.status}).`);
       process.exit(0);
     }
     const reader = res.body.getReader();

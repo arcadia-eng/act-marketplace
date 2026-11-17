@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 /** Default file the HTTP bridge's operator token lives in. Never printed. */
 export function defaultTokenFile(env: Record<string, string | undefined>, home = homedir()): string {
-  if (env.LOOKOUT_MCP_TOKEN_FILE?.trim()) return env.LOOKOUT_MCP_TOKEN_FILE.trim();
+  if (env.ACT_MCP_TOKEN_FILE?.trim()) return env.ACT_MCP_TOKEN_FILE.trim();
   const base = env.XDG_CONFIG_HOME?.trim() || join(home, ".config");
   return join(base, "lookout", "mcp-token");
 }
@@ -16,7 +16,7 @@ export interface Bearer {
 }
 
 /**
- * The bearer for an already-running local bridge. `LOOKOUT_MCP_TOKEN` wins.
+ * The bearer for an already-running local bridge. `ACT_MCP_TOKEN` wins.
  * A missing file is "no token", not an error. A read failure names the path
  * and the code, not the contents.
  */
@@ -25,7 +25,7 @@ export function readBearer(
   read: (path: string) => string = (path) => readFileSync(path, "utf8"),
   home?: string,
 ): Bearer {
-  const fromEnv = env.LOOKOUT_MCP_TOKEN?.trim();
+  const fromEnv = env.ACT_MCP_TOKEN?.trim();
   if (fromEnv) return { token: fromEnv, error: null };
   const path = defaultTokenFile(env, home);
   let text: string;

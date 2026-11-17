@@ -1,4 +1,4 @@
-// The Monitor watcher: one line when a Lookout chat settles, asks or needs a
+// The Monitor watcher: one line when an Act chat settles, asks or needs a
 // person, nothing while it works. The fleet and run steps turn a snapshot plus the
 // previous read's marks into a batch's lines, never one event twice across a
 // cursor. A page cut at the lanes limit is not the batch.
@@ -194,7 +194,7 @@ export function watchEvent(threadId: string, lane: LaneSnap | null, x: WatchExtr
   if (!lane) return null;
   const title = lane.title?.trim() || threadId;
   const at = `${x.machine ? `${x.machine}: ` : ""}${title} (${threadId})`;
-  const say = (kind: WatchKind, line: string) => ({ kind, line: `[lookout] ${at} ${line}`, ...(x.machine ? { machine: x.machine } : {}), ...(lane.lane ? { lane: lane.lane } : {}) });
+  const say = (kind: WatchKind, line: string) => ({ kind, line: `[act] ${at} ${line}`, ...(x.machine ? { machine: x.machine } : {}), ...(lane.lane ? { lane: lane.lane } : {}) });
   if (lane.state === "parked" && !lane.live) {
     const plan = lane.parked?.model ? `${lane.parked.model}'s plan` : "its plan";
     return say("parked", `waiting for ${plan}${lane.parked?.until ? ` until ${isoMinute(lane.parked.until)}` : ""}`);
@@ -208,7 +208,7 @@ export function watchEvent(threadId: string, lane: LaneSnap | null, x: WatchExtr
   const ask = lane.asking && lane.asking.to?.kind !== "agent" ? lane.asking : undefined;
   if (ask && (lane.live || lane.working) && !x.askTold) {
     const options = ask.options?.length ? ` (${ask.options.map((o, i) => `${i + 1}. ${flat(o)}`).join(" ")})` : "";
-    return say("asks", `asks while it works: ${sentencesWithin(ask.question, GIST_CLOSING)}${options}; answer with lookout_steer`);
+    return say("asks", `asks while it works: ${sentencesWithin(ask.question, GIST_CLOSING)}${options}; answer with act_steer`);
   }
   if (lane.live) return null;
   const decision = !x.replyTold && (lane.state === "done" || OPEN.has(lane.state)) && !laneOpenTodos(lane)
@@ -348,7 +348,7 @@ export function fleetStep(rows: FleetRow[], before: Map<string, string>, x: { ma
 }
 
 const goneEvent = (id: string, machine?: string): WatchEvent =>
-  ({ threadId: id, kind: "gone", line: `[lookout] ${machine ? `${machine}: ` : ""}${id} left the fleet (archived or deleted)`, ...(machine ? { machine } : {}) });
+  ({ threadId: id, kind: "gone", line: `[act] ${machine ? `${machine}: ` : ""}${id} left the fleet (archived or deleted)`, ...(machine ? { machine } : {}) });
 
 /** The line that ends a settled batch: one count per state it settled into (an open-todos settle counts its own). */
 export function fleetSummary(rows: FleetRow[], machines = 1): string {
@@ -359,7 +359,7 @@ export function fleetSummary(rows: FleetRow[], machines = 1): string {
   }
   const parts = SETTLED_ORDER.filter(s => counts.has(s)).map(s => `${counts.get(s)} ${s}`);
   const where = machines > 1 ? ` across ${machines} machines` : "";
-  return `[lookout] fleet settled${where}: ${parts.join(", ")}`;
+  return `[act] fleet settled${where}: ${parts.join(", ")}`;
 }
 
 const markState = (mark: string): string => mark.split(/[+~?]/)[0] ?? mark;
@@ -377,7 +377,7 @@ export function fleetDeadline(rows: FleetRow[], moreMarks?: Iterable<string>): s
     else if (state === "parked" || state === "interrupted" || markOpen(mark)) add(state);
   }
   const parts = [...counts.entries()].map(([s, n]) => `${n} ${s}`).join(", ");
-  return `[lookout] fleet still working${parts ? ` (${parts})` : ""}. Arm the watcher again.`;
+  return `[act] fleet still working${parts ? ` (${parts})` : ""}. Arm the watcher again.`;
 }
 
 /**
@@ -465,7 +465,7 @@ export function offPageEvents(before: Map<string, string>, off: Map<string, stri
     if (before.get(id) === mark) continue;
     const state = markState(mark);
     if (!state || state === "interrupted" || state === "parked" || markOpen(mark)) continue;
-    out.push({ threadId: id, kind: state, line: `[lookout] ${atId(id, machine)} ${state}`, ...(machine ? { machine } : {}) });
+    out.push({ threadId: id, kind: state, line: `[act] ${atId(id, machine)} ${state}`, ...(machine ? { machine } : {}) });
   }
   return out;
 }
@@ -479,7 +479,7 @@ export const offPageAnswers = (before: Map<string, string>, off: Map<string, str
 
 export function offPageAnswerEvents(before: Map<string, string>, off: Map<string, string>, machine?: string): WatchEvent[] {
   const out: WatchEvent[] = [];
-  const at = (id: string, kind: WatchKind, said: string) => out.push({ threadId: id, kind, line: `[lookout] ${atId(id, machine)} ${said}`, ...(machine ? { machine } : {}) });
+  const at = (id: string, kind: WatchKind, said: string) => out.push({ threadId: id, kind, line: `[act] ${atId(id, machine)} ${said}`, ...(machine ? { machine } : {}) });
   for (const [id, mark] of off) {
     if (before.get(id) === mark) continue;
     const state = markState(mark);
@@ -577,28 +577,28 @@ export function runStep(snap: RunSnap, before: string | null, machine?: string):
   if (before !== null && mark === before) return { line: null, mark, exit: false };
   if (snap.asks.length > 0 || snap.state === "awaiting_approval") {
     const q = snap.asks[0]?.title?.trim();
-    return { line: q ? `[lookout] ${at} asks: ${q}` : `[lookout] ${at} asks`, mark, exit: true };
+    return { line: q ? `[act] ${at} asks: ${q}` : `[act] ${at} asks`, mark, exit: true };
   }
   if (RUN_ENDS.has(snap.state)) {
     const why = snap.state === "failed" && snap.error ? errTail(snap.error) : "";
     const s = snap.state === "completed" ? snap.short : undefined;
     const short = s ? ` short of its plan: ${[s.failed ? `${s.failed} failed` : "", s.notRun.length ? `${s.notRun.length} phase${s.notRun.length === 1 ? "" : "s"} not run` : ""].filter(Boolean).join(", ")}` : "";
-    return { line: `[lookout] ${at} ${snap.state}${why}${short}`, mark, exit: true };
+    return { line: `[act] ${at} ${snap.state}${why}${short}`, mark, exit: true };
   }
-  if (snap.state === "paused") return { line: `[lookout] ${at} paused`, mark, exit: true };
+  if (snap.state === "paused") return { line: `[act] ${at} paused`, mark, exit: true };
   const prev = runMark(before);
   const news = agentNews(snap, prev?.agents ?? {});
   if (snap.state === "waiting") {
     // the run-level line names the wall; only an agent change since is separate news
     if (prev !== null && prev.run === run) {
-      if (news.length) return { line: `[lookout] ${at}: ${news.join("; ")}`, mark, exit: false };
+      if (news.length) return { line: `[act] ${at}: ${news.join("; ")}`, mark, exit: false };
       return { line: null, mark, exit: false };
     }
     const why = snap.waiting?.reason ? `: ${snap.waiting.reason}` : "";
     const until = snap.waiting?.until ? ` until ${isoMinute(snap.waiting.until)}` : "";
-    return { line: `[lookout] ${at} waiting${why}${until}`, mark, exit: false };
+    return { line: `[act] ${at} waiting${why}${until}`, mark, exit: false };
   }
-  if (news.length) return { line: `[lookout] ${at}: ${news.join("; ")}`, mark, exit: false };
+  if (news.length) return { line: `[act] ${at}: ${news.join("; ")}`, mark, exit: false };
   return { line: null, mark, exit: false };
 }
 
@@ -606,12 +606,12 @@ export function runStep(snap: RunSnap, before: string | null, machine?: string):
 export const WATCH_MAX_MS = 29 * 60 * 1000;
 
 export function deadlineLine(threadId: string): string {
-  return `[lookout] ${threadId} still working. Arm the watcher again.`;
+  return `[act] ${threadId} still working. Arm the watcher again.`;
 }
 
 /** The re-arm line at the deadline for a run (on `machine` when it isn't this one). */
 export function runDeadline(snap: RunSnap, machine?: string): string {
-  return `[lookout] ${machine ? `${machine}: ` : ""}run ${snap.name || snap.runId} (${snap.runId}) still ${snap.state}. Arm the watcher again.`;
+  return `[act] ${machine ? `${machine}: ` : ""}run ${snap.name || snap.runId} (${snap.runId}) still ${snap.state}. Arm the watcher again.`;
 }
 
 /**
@@ -622,7 +622,7 @@ export function followDeadline(rows: FleetRow[], filters: string): string {
   const counts = new Map<string, number>();
   for (const r of rows) if (rowOpen(r) || rowWaitsForPlan(r)) { const s = rowSettledOnOwnWork(r) ? "waiting on own work" : r.state; counts.set(s, (counts.get(s) ?? 0) + 1); }
   const going = [...counts.entries()].map(([s, n]) => `${n} ${s}`).join(", ");
-  return `[lookout] follow (${filters}) reached Monitor's 30 minute cap${going ? ` with ${going}` : ""}: arm the same command again (nothing it told is told twice), or add these filters to the plugin's monitor with --follow --add, which needs no arming.`;
+  return `[act] follow (${filters}) reached Monitor's 30 minute cap${going ? ` with ${going}` : ""}: arm the same command again (nothing it told is told twice), or add these filters to the plugin's monitor with --follow --add, which needs no arming.`;
 }
 
 /**
