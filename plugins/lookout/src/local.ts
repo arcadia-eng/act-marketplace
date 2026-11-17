@@ -13,7 +13,7 @@ export const SESSION_HEADER = "x-lookout-session";
  * The header a long poll states its hold with (src/network/protocol.ts HOLD_HEADER). A relayed wait without it is cut
  * at the relay's short call timeout, so any request that waits sends it.
  */
-export const HOLD_HEADER = "lookout-hold";
+export const HOLD_HEADER = "act-hold";
 
 /**
  * A machine of this account, as this server's relay reaches it (src/network/routes.ts, the same surface
