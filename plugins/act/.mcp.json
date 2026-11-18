@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "lookout": {
+    "act": {
       "command": "sh",
       "args": [
         "${CLAUDE_PLUGIN_ROOT}/scripts/bun.sh",

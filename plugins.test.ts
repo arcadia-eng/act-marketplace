@@ -26,9 +26,9 @@ describe("claude code marketplace", () => {
     }
   });
 
-  test("the lookout plugin starts its MCP server through the Bun launcher", () => {
-    const mcp = read("plugins/lookout/.mcp.json") as { mcpServers: Record<string, { command: string; args: string[] }> };
-    expect(mcp.mcpServers.lookout?.args[0]).toBe("${CLAUDE_PLUGIN_ROOT}/scripts/bun.sh");
-    expect(existsSync(join(root, "plugins/lookout/scripts/bun.sh"))).toBe(true);
+  test("the act plugin starts its MCP server through the Bun launcher", () => {
+    const mcp = read("plugins/act/.mcp.json") as { mcpServers: Record<string, { command: string; args: string[] }> };
+    expect(mcp.mcpServers.act?.args[0]).toBe("${CLAUDE_PLUGIN_ROOT}/scripts/bun.sh");
+    expect(existsSync(join(root, "plugins/act/scripts/bun.sh"))).toBe(true);
   });
 });

@@ -15,4 +15,4 @@ jobs:
       - run: bun install
       - run: bun run validate
       - run: bun test
-      - run: bun run --filter '@arcadia/lookout-mcp' typecheck
+      - run: bun run --filter '@arcadia/act-mcp' typecheck

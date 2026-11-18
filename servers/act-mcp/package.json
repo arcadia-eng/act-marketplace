@@ -1,13 +1,13 @@
 {
-  "name": "@arcadia/lookout-mcp",
+  "name": "@arcadia/act-mcp",
   "version": "1.0.0",
-  "description": "Arcadia's coding-agent harness Lookout as MCP tools: delegate work to real sessions, poll progress, steer, stop and rewind: Streamable HTTP + OAuth 2.1.",
+  "description": "Arcadia's coding-agent harness Act as MCP tools: delegate work to real sessions, poll progress, steer, stop and rewind: Streamable HTTP + OAuth 2.1.",
   "license": "MIT",
   "type": "module",
   "private": false,
   "sideEffects": false,
   "bin": {
-    "lookout-mcp": "./src/main.ts"
+    "act-mcp": "./src/main.ts"
   },
   "exports": {
     ".": "./src/index.ts",

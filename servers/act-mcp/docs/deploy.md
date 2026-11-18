@@ -1,7 +1,7 @@
-# Deploying the Lookout MCP server
+# Deploying the Act MCP server
 
 The runbook shape for running the bridge as a service. It assumes a
-machine with the Lookout app/server running locally; nothing here carries
+machine with the Act app/server running locally; nothing here carries
 a secret: fill in your own values.
 
 ## Process
@@ -12,27 +12,27 @@ unconditionally on exit. Prefer a small wrapper so the token never rides
 
 ```sh
 #!/bin/sh
-# /opt/lookout-mcp/run.sh  (chmod 700, owner-only)
+# /opt/act-mcp/run.sh  (chmod 700, owner-only)
 set -a
-. /opt/lookout-mcp/env        # chmod 600: LOOKOUT_MCP_TOKEN=…, LOOKOUT_MCP_ROOTS=…
+. /opt/act-mcp/env        # chmod 600: LOOKOUT_MCP_TOKEN=…, LOOKOUT_MCP_ROOTS=…
 set +a
-exec /usr/local/bin/bun /opt/lookout-mcp/src/main.ts
+exec /usr/local/bin/bun /opt/act-mcp/src/main.ts
 ```
 
 macOS launchd sketch:
 
 ```xml
-<!-- ~/Library/LaunchAgents/com.example.lookout-mcp.plist -->
+<!-- ~/Library/LaunchAgents/com.example.act-mcp.plist -->
 <dict>
-  <key>Label</key><string>com.example.lookout-mcp</string>
+  <key>Label</key><string>com.example.act-mcp</string>
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ProgramArguments</key>
   <array>
-    <string>/opt/lookout-mcp/run.sh</string>
+    <string>/opt/act-mcp/run.sh</string>
   </array>
-  <key>StandardOutPath</key><string>/var/log/lookout-mcp.log</string>
-  <key>StandardErrorPath</key><string>/var/log/lookout-mcp.log</string>
+  <key>StandardOutPath</key><string>/var/log/act-mcp.log</string>
+  <key>StandardErrorPath</key><string>/var/log/act-mcp.log</string>
 </dict>
 ```
 

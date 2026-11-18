@@ -1,9 +1,9 @@
 // listings.json gate: JSON Schema validation plus the invariants a schema
 // cannot express: unique ids, one version source (listing version ===
-// servers/lookout-mcp package version === the source ref tag; a connector's
+// servers/act-mcp package version === the source ref tag; a connector's
 // listing version === its plugin.json === the ref tag, its mcp.json naming
-// the url Lookout dials), and the URL semantics mirrored from the Lookout
-// monorepo's runtime validator (src/customize/listings.ts validateListing):
+// the url Act dials), and the URL semantics mirrored from Act's runtime
+// validator (src/customize/listings.ts validateListing):
 // icon/homepage must be parseable https URLs, install urls parseable
 // http(s), and each transport carries its required field. A bad listing can
 // never merge.
@@ -55,9 +55,9 @@ function connectorProblems(l: Feed["listings"][number]): string[] {
   if (l.source.ref !== `${l.id}-v${l.version}`) errors.push(`${where}: source.ref ${l.source.ref} != ${l.id}-v${l.version}`);
   if (!l.icon.includes(`@${l.id}-v${l.version}/`)) errors.push(`${where}: icon must be pinned to ${l.id}-v${l.version}`);
   const servers = Object.values((readJson(`${dir}/mcp.json`) as { mcpServers?: Record<string, { url?: string }> }).mcpServers ?? {});
-  const dialed = l.install.filter(t => t.host === "lookout").map(t => t.url);
+  const dialed = l.install.filter(t => t.host === "act").map(t => t.url);
   if (servers.length !== 1 || dialed.length !== 1 || servers[0]!.url !== dialed[0])
-    errors.push(`${where}: mcp.json must name the one url its lookout install target dials`);
+    errors.push(`${where}: mcp.json must name the one url its act install target dials`);
   return errors;
 }
 
@@ -90,7 +90,7 @@ export function validateListings(feed: unknown, pkgVersion: string): string[] {
           try {
             const u = new URL(t.url);
             if (u.protocol !== "https:" && u.protocol !== "http:") errors.push(`${where}: install[${i}].url must be http(s)`);
-            if (t.host === "lookout" && u.protocol !== "https:") errors.push(`${where}: install[${i}].url for the lookout host must be https`);
+            if (t.host === "act" && u.protocol !== "https:") errors.push(`${where}: install[${i}].url for the act host must be https`);
           } catch {
             errors.push(`${where}: install[${i}].url must be a parseable http(s) URL (got "${t.url}")`);
           }
@@ -101,26 +101,26 @@ export function validateListings(feed: unknown, pkgVersion: string): string[] {
     }
     if (l.source.type === "github" && l.source.path?.startsWith("connectors/")) errors.push(...connectorProblems(l));
   }
-  const mcp = typed.listings.find(l => l.id === "lookout-mcp");
+  const mcp = typed.listings.find(l => l.id === "act-mcp");
   if (!mcp) {
-    errors.push("the lookout-mcp listing is missing");
+    errors.push("the act-mcp listing is missing");
     return errors;
   }
   // One version source: the server's package version drives the listing
-  // version and the immutable source ref tag (lookout-mcp-vX.Y.Z).
+  // version and the immutable source ref tag (act-mcp-vX.Y.Z).
   if (mcp.version !== pkgVersion) errors.push(`version drift: listing ${mcp.version} != package ${pkgVersion}`);
-  if (mcp.source.type === "github" && mcp.source.ref !== `lookout-mcp-v${pkgVersion}`)
-    errors.push(`source.ref ${mcp.source.ref} != lookout-mcp-v${pkgVersion}`);
+  if (mcp.source.type === "github" && mcp.source.ref !== `act-mcp-v${pkgVersion}`)
+    errors.push(`source.ref ${mcp.source.ref} != act-mcp-v${pkgVersion}`);
   return errors;
 }
 
 if (import.meta.main) {
   const feed = JSON.parse(readFileSync(join(root, "listings.json"), "utf8"));
-  const pkg = JSON.parse(readFileSync(join(root, "servers/lookout-mcp/package.json"), "utf8")) as { version: string };
+  const pkg = JSON.parse(readFileSync(join(root, "servers/act-mcp/package.json"), "utf8")) as { version: string };
   const errors = validateListings(feed, pkg.version);
   if (errors.length) {
     for (const e of errors) console.error(e);
     process.exit(1);
   }
-  console.log(`listings.json ok: ${(feed as Feed).listings.length} listing(s), lookout-mcp ${pkg.version}`);
+  console.log(`listings.json ok: ${(feed as Feed).listings.length} listing(s), act-mcp ${pkg.version}`);
 }

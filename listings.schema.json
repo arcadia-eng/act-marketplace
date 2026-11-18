@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/arcadia-eng/lookout-marketplace/main/listings.schema.json",
-  "title": "Lookout marketplace listings",
-  "description": "The official Lookout marketplace feed. schemaVersion 1 envelope: listings.json is one versioned file the Customize tab fetches and renders as install actions.",
+  "$id": "https://raw.githubusercontent.com/arcadia-eng/act-marketplace/main/listings.schema.json",
+  "title": "Act marketplace listings",
+  "description": "The official Act marketplace feed. schemaVersion 1 envelope: listings.json is one versioned file the Customize tab fetches and renders as install actions.",
   "type": "object",
   "required": ["schemaVersion", "listings"],
   "additionalProperties": false,
@@ -28,8 +28,8 @@
       "maxItems": 12,
       "items": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": "\\S" }
     },
-    "lookoutAuth": {
-      "description": "How Lookout signs in. policy names a sign-in kept in Lookout's source, keyed by the url's host: a feed never chooses a client.",
+    "actAuth": {
+      "description": "How Act signs in. policy names a sign-in kept in Act's source, keyed by the url's host: a feed never chooses a client.",
       "oneOf": [
         {
           "type": "object",
@@ -77,13 +77,13 @@
           "then": { "required": ["command"] }
         },
         {
-          "description": "host lookout: a connector Lookout itself dials. Remote only, over https: a feed never makes Lookout run a command.",
-          "if": { "properties": { "host": { "const": "lookout" } } },
+          "description": "host act: a connector Act itself dials. Remote only, over https: a feed never makes Act run a command.",
+          "if": { "properties": { "host": { "const": "act" } } },
           "then": {
             "properties": {
               "transport": { "const": "http" },
               "url": { "$ref": "#/$defs/httpsUrl" },
-              "auth": { "$ref": "#/$defs/lookoutAuth" }
+              "auth": { "$ref": "#/$defs/actAuth" }
             }
           }
         }
@@ -93,7 +93,7 @@
       "type": "object",
       "required": [
         "id", "kind", "name", "version", "description", "author", "license",
-        "homepage", "repository", "icon", "lookout", "publisher", "source", "install"
+        "homepage", "repository", "icon", "act", "publisher", "source", "install"
       ],
       "additionalProperties": false,
       "properties": {
@@ -122,7 +122,7 @@
         },
         "icon": { "$ref": "#/$defs/httpsUrl" },
         "iconDark": { "$ref": "#/$defs/httpsUrl" },
-        "lookout": { "$ref": "#/$defs/nonEmptyString" },
+        "act": { "$ref": "#/$defs/nonEmptyString" },
         "publisher": {
           "type": "object",
           "required": ["name", "url"],
@@ -168,7 +168,7 @@
         },
         "availability": { "enum": ["preview", "public"], "description": "Absent: public." },
         "audience": {
-          "description": "Who sees the listing: the sha256 hex of lookout-audience/1:<account user id>, one per Lookout account. Absent: everyone.",
+          "description": "Who sees the listing: the sha256 hex of act-audience/1:<account user id> (and, until every app reads that, of lookout-audience/1:<account user id>), one per Act account. Absent: everyone.",
           "type": "array",
           "minItems": 1,
           "maxItems": 100,

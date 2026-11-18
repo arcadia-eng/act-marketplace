@@ -7,8 +7,8 @@
     "name": "Arcadia",
     "url": "https://github.com/arcadia-eng"
   },
-  "homepage": "https://github.com/arcadia-eng/lookout-marketplace/tree/main/connectors/gmail",
-  "repository": "https://github.com/arcadia-eng/lookout-marketplace",
+  "homepage": "https://github.com/arcadia-eng/act-marketplace/tree/main/connectors/gmail",
+  "repository": "https://github.com/arcadia-eng/act-marketplace",
   "license": "MIT",
   "keywords": ["gmail", "google", "mail", "mcp"],
   "mcpServers": "./mcp.json"

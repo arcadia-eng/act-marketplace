@@ -1,15 +1,15 @@
-# Lookout MCP server
+# Act MCP server
 
-Drive Lookout from any MCP host over Streamable HTTP. The server is a separate process in front of Lookout's loopback API. Sign-in for people is OAuth 2.1. Local use takes a raw operator Bearer.
+Drive Act from any MCP host over Streamable HTTP. The server is a separate process in front of Act's loopback API. Sign-in for people is OAuth 2.1. Local use takes a raw operator Bearer.
 
 ## Quickstart (self-hosted, raw Bearer)
 
-You need a running Lookout desktop app or `lookout` server on the machine
+You need a running Act desktop app or `act` server on the machine
 (the server talks to it over loopback).
 
 ```bash
-git clone https://github.com/arcadia-eng/lookout-marketplace.git
-cd lookout-marketplace/servers/lookout-mcp
+git clone https://github.com/arcadia-eng/act-marketplace.git
+cd act-marketplace/servers/act-mcp
 
 # Operator token: generate once, keep in a private file: this value IS the
 # Bearer your client sends below. Never commit it (.mcp-token is gitignored).
@@ -22,7 +22,7 @@ From the packed package (no checkout) the same entry is a bin: the
 executable carries a Bun shebang, so it runs wherever Bun is installed:
 
 ```bash
-LOOKOUT_MCP_TOKEN="$(cat .mcp-token)" bunx @arcadia/lookout-mcp   # = bunx lookout-mcp; same env vars
+LOOKOUT_MCP_TOKEN="$(cat .mcp-token)" bunx @arcadia/act-mcp   # = bunx act-mcp; same env vars
 ```
 
 Point any MCP client at `http://127.0.0.1:8792/mcp`, authenticating with
@@ -45,7 +45,7 @@ The server binds `127.0.0.1` only; the proxy forwards in.
 ### OAuth (account consent): additionally requires an origin
 
 The raw Bearer above is the operator credential for local dev and tests.
-Human sign-in uses OAuth 2.1 with the consent step delegated to a Lookout
+Human sign-in uses OAuth 2.1 with the consent step delegated to an Act
 accounts origin: besides `LOOKOUT_MCP_TOKEN`, OAuth needs
 
 - `LOOKOUT_MCP_ORIGIN_URL`: the accounts origin (consent pages +
@@ -64,7 +64,7 @@ one authorize + consent hop, not a fresh dynamic registration.
 | Variable | Default | Meaning |
 |---|---|---|
 | `LOOKOUT_MCP_TOKEN` | - (required) | raw Bearer for the local Inspector/tests; always the full tool surface |
-| `LOOKOUT_URL` | `http://127.0.0.1:8789` | the Lookout server to drive (loopback) |
+| `LOOKOUT_URL` | `http://127.0.0.1:8789` | the Act server to drive (loopback) |
 | `LOOKOUT_MCP_PORT` | `8792` | listen port (host `127.0.0.1`) |
 | `LOOKOUT_MCP_PUBLIC_URL` | `http://127.0.0.1:<port>` | the origin hosts reach (drives OAuth redirects + icon URLs) |
 | `LOOKOUT_MCP_ROOTS` | - (empty) | comma-separated canonical roots `lookout_delegate`/`lookout_create_project` may create workspaces under; empty = existing projects only |
@@ -89,7 +89,7 @@ one authorize + consent hop, not a fresh dynamic registration.
   without consuming the token.
 - Per-connection tool scopes: a consented grant can carry a subset of the
   22 tools. `tools/list` filters to the scope; `tools/call` outside it is
-  refused before the Lookout server is ever reached, with an error naming
+  refused before the Act server is ever reached, with an error naming
   the scope. The raw operator Bearer always sees the full surface.
 
 ## Tool surface
@@ -128,7 +128,7 @@ outlasts an MCP call: poll `lookout_check` ~30s, read `statusLine` first.
   projects only.
 - No credential handling: the server never touches provider token stores;
   it only drives the local API as the operator.
-- A message starting with `#` is Lookout's memory shortcut; the bridge
+- A message starting with `#` is Act's memory shortcut; the bridge
   escapes it so it runs as a turn, and says so in the result.
 
 ## Deploy
