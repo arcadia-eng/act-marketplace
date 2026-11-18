@@ -13,7 +13,7 @@ import { REMOTE_MCP_URL } from "../src/target.js";
 
 const mcpUrl = (process.env.ACT_MCP_REMOTE_URL ?? REMOTE_MCP_URL).replace(/\/$/, "");
 const { origin, pathname } = new URL(mcpUrl);
-console.error(`login: ${mcpUrl} serves the Act account that runs it. To reach your own machines, install the Act app or CLI on this machine instead: the plugin then uses it, with no sign-in.`);
+console.error(`login: ${mcpUrl} serves the Arcadia account that runs it. To reach your own machines, install the Act app or CLI on this machine instead: the plugin then uses it, with no sign-in.`);
 const metaUrl = `${origin}/.well-known/oauth-authorization-server${pathname === "/" ? "" : pathname}`;
 
 function openBrowser(url: string) {
