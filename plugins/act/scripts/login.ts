@@ -2,7 +2,7 @@
 // Sign this plugin in to the hosted Act MCP (OAuth, PKCE, loopback
 // redirect). In Claude Code it runs as /act:login, which hands it the
 // plugin data dir (CLAUDE_PLUGIN_DATA is not in the Bash tool's environment);
-// from a terminal the tokens go to ~/.config/lookout/claude-plugin-oauth.json,
+// from a terminal the tokens go to ~/.config/act/claude-plugin-oauth.json,
 // which the MCP entry reads too. Mode 0600, never printed. The local app does
 // not need this: stdio and the local bridge use the machine's own Act.
 

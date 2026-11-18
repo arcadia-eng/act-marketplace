@@ -6,7 +6,7 @@ import { join } from "node:path";
 export function defaultTokenFile(env: Record<string, string | undefined>, home = homedir()): string {
   if (env.ACT_MCP_TOKEN_FILE?.trim()) return env.ACT_MCP_TOKEN_FILE.trim();
   const base = env.XDG_CONFIG_HOME?.trim() || join(home, ".config");
-  return join(base, "lookout", "mcp-token");
+  return join(base, "act", "mcp-token");
 }
 
 export interface Bearer {

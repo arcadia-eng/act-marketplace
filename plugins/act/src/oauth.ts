@@ -19,7 +19,7 @@ export function oauthPath(env: Record<string, string | undefined>, home = homedi
   if (env.ACT_MCP_OAUTH_FILE?.trim()) return env.ACT_MCP_OAUTH_FILE.trim();
   if (env.CLAUDE_PLUGIN_DATA?.trim()) return join(env.CLAUDE_PLUGIN_DATA.trim(), "oauth.json");
   const base = env.XDG_CONFIG_HOME?.trim() || join(home, ".config");
-  return join(base, "lookout", "claude-plugin-oauth.json");
+  return join(base, "act", "claude-plugin-oauth.json");
 }
 
 export function loadOAuth(text: string): StoredOAuth | null {

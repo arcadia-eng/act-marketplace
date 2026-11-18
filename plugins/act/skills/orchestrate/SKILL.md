@@ -68,7 +68,7 @@ A `-p` session runs no plugin monitor. There, and only there, arm Monitor by han
 A session that should hear its chats with no watcher at all starts with the `act` channel (a Claude Code research preview: a warning dialog at each start, interactive sessions only):
 
 ```bash
-ACT_CHANNEL=1 claude --dangerously-load-development-channels plugin:lookout@lookout-marketplace
+ACT_CHANNEL=1 claude --dangerously-load-development-channels plugin:act@act-marketplace
 ```
 
 The same lines then arrive as `<channel source="act" thread_id=… state=… lane=…>` events, for the chats this session delegates and for what `channel.json` in the plugin's data folder (`${CLAUDE_PLUGIN_DATA}`) names: `{"lanePrefixes": ["lead-"], "threads": ["<agent chat id>"]}`, read again when it changes. Act on them with the act tools; there is nothing to reply to and nothing to re-arm. Name a chat in `channel.json` or in `follow.json`, not both, or it is told twice. Without the channel, the monitor is the way.

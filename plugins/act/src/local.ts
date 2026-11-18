@@ -2,13 +2,13 @@
 // MCP bridge sends (`x-act-client: mcp`, and the app session from the
 // home's app-session.key: src/server/ontology/principal.ts forwardedHeaders).
 
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-export const CLIENT_HEADER = "x-lookout-client";
+export const CLIENT_HEADER = "x-act-client";
 /** The header the app's server admits a local client by (principal.ts SESSION_HEADER). */
-export const SESSION_HEADER = "x-lookout-session";
+export const SESSION_HEADER = "x-act-session";
 /**
  * The header a long poll states its hold with (src/network/protocol.ts HOLD_HEADER). A relayed wait without it is cut
  * at the relay's short call timeout, so any request that waits sends it.
@@ -25,16 +25,9 @@ export function machineBase(base: string, ref: string): string {
 
 const LOOPBACK = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
 
-// the app's home from before the rename: the old build runs on it until the renamed one's first start leaves it a link
-// to the new one (desktop/carry-over.mjs appHome, whose rule this copies: the plugin ships alone)
-const LEGACY_HOME = ".lookout";
-// the service a bridge from before the rename names in its /health (desktop/legacy.mjs mcpService)
-const LEGACY_MCP = "lookout-mcp";
-
-/** The running app's home: ACT_HOME, else the product's when it is there, else the old one while it is. */
+/** The running app's home: ACT_HOME, else ~/.act. */
 function appHome(env: Record<string, string | undefined>): string {
-  const own = join(homedir(), ".act"), old = join(homedir(), LEGACY_HOME);
-  return env.ACT_HOME?.trim() || (!existsSync(own) && existsSync(old) ? old : own);
+  return env.ACT_HOME?.trim() || join(homedir(), ".act");
 }
 
 /**
@@ -75,5 +68,5 @@ export async function probeApp(base: string, ms = 400, fetchFn?: typeof fetch): 
 
 export async function probeBridge(origin: string, ms = 400, fetchFn: typeof fetch = fetch): Promise<boolean> {
   const body = await localGet(origin, "/health", ms, fetchFn);
-  return !!body && typeof body === "object" && ["act-mcp", LEGACY_MCP].includes(String((body as { service?: string }).service));
+  return !!body && typeof body === "object" && (body as { service?: string }).service === "act-mcp";
 }

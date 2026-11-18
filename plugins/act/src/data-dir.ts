@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 /** Claude Code's data folder for this plugin: `<plugin>-<marketplace>` under its config dir's plugins/data. */
-export const PLUGIN_DATA_NAME = "lookout-lookout-marketplace";
+export const PLUGIN_DATA_NAME = "act-act-marketplace";
 
 /**
  * Where the plugin keeps what outlives one process (the follow watcher's cursor and marks, the channel's
@@ -15,5 +15,5 @@ export function pluginDataDir(env: Record<string, string | undefined> = process.
   if (set) return set;
   const claude = join(env.CLAUDE_CONFIG_DIR?.trim() || join(home, ".claude"), "plugins", "data", PLUGIN_DATA_NAME);
   if (existsSync(claude)) return claude;
-  return join(env.XDG_CONFIG_HOME?.trim() || join(home, ".config"), "lookout", "claude-plugin");
+  return join(env.XDG_CONFIG_HOME?.trim() || join(home, ".config"), "act", "claude-plugin");
 }
