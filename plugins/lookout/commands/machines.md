@@ -3,7 +3,7 @@ description: List Act machines, and optionally select one
 argument-hint: "[name to select]"
 ---
 
-Machines on this Act account.
+Machines on this Arcadia account.
 
 Arguments: $ARGUMENTS
 

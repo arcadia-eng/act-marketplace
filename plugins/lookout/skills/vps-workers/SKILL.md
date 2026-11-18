@@ -5,7 +5,7 @@ description: Run Act chats on the user's Linux VPSs instead of this Mac, to spre
 
 # Act agents on a VPS
 
-A VPS is a worker of the user's Act account: it runs whole Act chats (loop, tools, subscriptions) and reports its load. This Mac is the control plane: you place work from here. This skill puts coding chats on a VPS. Act Agents (the app's orchestrator agents) live on the Mac unless the user makes a machine an agents host (`act_configure_machine {machine, agentsHost: true}`, only when the user asks) and moves an agent there or creates one on it.
+A VPS is a worker of the user's Arcadia account: it runs whole Act chats (loop, tools, subscriptions) and reports its load. This Mac is the control plane: you place work from here. This skill puts coding chats on a VPS. Act Agents (the app's orchestrator agents) live on the Mac unless the user makes a machine an agents host (`act_configure_machine {machine, agentsHost: true}`, only when the user asks) and moves an agent there or creates one on it.
 
 ## 1. Enroll a fresh VPS (once)
 

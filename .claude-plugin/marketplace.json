@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Act plugins for Claude Code.",
-    "version": "0.1.48"
+    "version": "0.1.49"
   },
   "plugins": [
     {
       "name": "lookout",
       "source": "./plugins/lookout",
       "description": "Use Act from Claude Code: delegate work onto Act models and machines, steer fleets, read quotas, and review a chat's diff.",
-      "version": "0.1.48",
+      "version": "0.1.49",
       "author": {
         "name": "Arcadia"
       },

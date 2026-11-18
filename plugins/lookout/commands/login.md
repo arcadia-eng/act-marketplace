@@ -1,5 +1,5 @@
 ---
-description: Sign this plugin in to your Act account, on a machine without the Act app
+description: Sign this plugin in to your Arcadia account, on a machine without the Act app
 ---
 
 Sign the Act plugin in to Act's hosted MCP. A machine with the Act app needs no sign-in: the plugin uses the app.

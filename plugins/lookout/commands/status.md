@@ -1,5 +1,5 @@
 ---
-description: Fleet, machines, and provider quotas for this Act account
+description: Fleet, machines, and provider quotas for this Arcadia account
 ---
 
 Show Act's fleet, machines, and quotas.
