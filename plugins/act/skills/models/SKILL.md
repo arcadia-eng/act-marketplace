@@ -20,7 +20,7 @@ The canonical document is `GET /api/providers` on the local Act app (`http://127
 1. Drop `expired`, `refused`, `ended` (no active plan), and `disconnected`.
 2. Drop `exhausted` (a window is spent until `resetsAt`) unless the user explicitly wants that provider.
 3. Among the rest, prefer the provider whose tightest window has the most `leftPercent`.
-4. A `connected` provider with `metered: false` (no plan windows) is the right default for a trivial task. `act_models` shows what it can run. Do not invent a model id; use one from that list. OpenCode's free catalog is the usual unmetered choice when it is connected.
+4. A `connected` provider with `metered: false` (no plan windows) is the right default for a trivial task. `act_models` shows what it can run. Do not invent a model id; use one from that list.
 5. Pass the chosen id as `model` on `act_delegate`. Omit `effort` to take the model's own default, unless the user named a level from that model's ladder.
 
 When the user did not ask for a model, omit `model`. The server default is a choice, and overriding it without a reason spends the wrong plan.
