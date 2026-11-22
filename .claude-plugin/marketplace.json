@@ -1,0 +1,30 @@
+{
+  "name": "act-marketplace",
+  "owner": {
+    "name": "Arcadia",
+    "url": "https://github.com/arcadia-eng"
+  },
+  "metadata": {
+    "description": "Act plugins for Claude Code.",
+    "version": "0.1.57"
+  },
+  "plugins": [
+    {
+      "name": "act",
+      "source": "./plugins/act",
+      "description": "Use Act from Claude Code: delegate work onto Act models and machines, steer fleets, read quotas, and review a chat's diff.",
+      "version": "0.1.57",
+      "author": {
+        "name": "Arcadia"
+      },
+      "category": "development",
+      "license": "MIT",
+      "homepage": "https://act.arcadia.is/docs/other-apps",
+      "repository": "https://github.com/arcadia-eng/act-marketplace",
+      "keywords": ["act", "orchestrator", "subagent", "mcp", "machines"]
+    }
+  ],
+  "renames": {
+    "lookout": "act"
+  }
+}

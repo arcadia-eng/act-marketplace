@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "listings": [
+    {
+      "id": "act-mcp",
+      "kind": "connector",
+      "name": "Act MCP",
+      "version": "2.0.0",
+      "description": "Drive Act from any MCP host: spawn, steer, monitor and stop real Act sessions over Streamable HTTP with OAuth 2.1.",
+      "author": { "name": "Arcadia" },
+      "license": "MIT",
+      "homepage": "https://github.com/arcadia-eng/act-marketplace/tree/main/servers/act-mcp",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/arcadia-eng/act-marketplace",
+        "directory": "servers/act-mcp"
+      },
+      "icon": "https://cdn.jsdelivr.net/gh/arcadia-eng/act-marketplace@act-mcp-v2.0.0/assets/act-mcp.svg",
+      "act": ">=0.1.0",
+      "publisher": { "name": "Arcadia", "url": "https://github.com/arcadia-eng" },
+      "source": {
+        "type": "github",
+        "repo": "arcadia-eng/act-marketplace",
+        "path": "servers/act-mcp",
+        "ref": "act-mcp-v2.0.0"
+      },
+      "install": [
+        {
+          "host": "grok",
+          "label": "Grok custom connector (hosted)",
+          "transport": "http",
+          "url": "https://act.arcadia.is/mcp",
+          "auth": { "type": "oauth2-pkce", "scope": "mcp" }
+        },
+        {
+          "host": "generic",
+          "label": "Any MCP client (hosted)",
+          "transport": "http",
+          "url": "https://act.arcadia.is/mcp",
+          "auth": { "type": "oauth2-pkce", "scope": "mcp" }
+        }
+      ]
+    },
+    {
+      "id": "gmail",
+      "kind": "connector",
+      "name": "Gmail",
+      "version": "1.0.0",
+      "description": "Search, read, draft and organize your mail.",
+      "author": { "name": "Arcadia" },
+      "license": "MIT",
+      "homepage": "https://github.com/arcadia-eng/act-marketplace/tree/main/connectors/gmail",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/arcadia-eng/act-marketplace",
+        "directory": "connectors/gmail"
+      },
+      "icon": "https://cdn.jsdelivr.net/gh/arcadia-eng/act-marketplace@gmail-v1.0.0/assets/gmail.svg",
+      "act": ">=0.2.0",
+      "publisher": { "name": "Arcadia", "url": "https://github.com/arcadia-eng" },
+      "source": {
+        "type": "github",
+        "repo": "arcadia-eng/act-marketplace",
+        "path": "connectors/gmail",
+        "ref": "gmail-v1.0.0"
+      },
+      "availability": "preview",
+      "audience": [
+        "9345d60707406ccec80d57c23916eed8ccfa534e5842629568e9581e30f71238"
+      ],
+      "capabilities": {
+        "can": ["Search and read mail and drafts", "Write drafts and replies", "Label and archive", "Mark read or unread", "Move to Trash or Spam"],
+        "cannot": ["Send mail (only you can)", "Delete mail for good", "Open what an attachment holds", "Change Gmail's settings"]
+      },
+      "untrusted": true,
+      "limitedUse": true,
+      "sensitiveTools": ["send_*", "forward_*"],
+      "install": [
+        {
+          "host": "act",
+          "label": "Google's hosted Gmail MCP server",
+          "transport": "http",
+          "url": "https://gmailmcp.googleapis.com/mcp/v1",
+          "auth": { "type": "oauth", "policy": "gmailmcp" }
+        }
+      ]
+    }
+  ]
+}

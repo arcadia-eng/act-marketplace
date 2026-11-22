@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/arcadia-eng/act-marketplace/main/listings.schema.json",
+  "title": "Act marketplace listings",
+  "description": "The official Act marketplace feed. schemaVersion 1 envelope: listings.json is one versioned file the Customize tab fetches and renders as install actions.",
+  "type": "object",
+  "required": ["schemaVersion", "listings"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "listings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/listing" }
+    }
+  },
+  "$defs": {
+    "httpsUrl": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "pattern": "^https://[^/\\s]+"
+    },
+    "nonEmptyString": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "words": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": "\\S" }
+    },
+    "actAuth": {
+      "description": "How Act signs in. policy names a sign-in kept in Act's source, keyed by the url's host: a feed never chooses a client.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type", "policy"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "oauth" },
+            "policy": { "type": "string", "pattern": "^[a-z0-9-]{1,40}$" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": { "type": { "const": "none" } }
+        }
+      ]
+    },
+    "installTarget": {
+      "type": "object",
+      "required": ["host", "label", "transport", "auth"],
+      "additionalProperties": false,
+      "properties": {
+        "host": { "$ref": "#/$defs/nonEmptyString" },
+        "label": { "$ref": "#/$defs/nonEmptyString" },
+        "transport": { "enum": ["http", "stdio"] },
+        "url": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "pattern": "^https?://[^/\\s]+"
+        },
+        "command": { "$ref": "#/$defs/nonEmptyString" },
+        "args": { "type": "array", "items": { "type": "string" } },
+        "env": { "type": "array", "items": { "type": "string" } },
+        "auth": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "transport": { "const": "http" } } },
+          "then": { "required": ["url"] }
+        },
+        {
+          "if": { "properties": { "transport": { "const": "stdio" } } },
+          "then": { "required": ["command"] }
+        },
+        {
+          "description": "host act: a connector Act itself dials. Remote only, over https: a feed never makes Act run a command.",
+          "if": { "properties": { "host": { "const": "act" } } },
+          "then": {
+            "properties": {
+              "transport": { "const": "http" },
+              "url": { "$ref": "#/$defs/httpsUrl" },
+              "auth": { "$ref": "#/$defs/actAuth" }
+            }
+          }
+        }
+      ]
+    },
+    "listing": {
+      "type": "object",
+      "required": [
+        "id", "kind", "name", "version", "description", "author", "license",
+        "homepage", "repository", "icon", "act", "publisher", "source", "install"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$", "maxLength": 80 },
+        "kind": { "enum": ["connector", "plugin", "skill"] },
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "description": { "$ref": "#/$defs/nonEmptyString" },
+        "author": {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": { "name": { "$ref": "#/$defs/nonEmptyString" } }
+        },
+        "license": { "$ref": "#/$defs/nonEmptyString" },
+        "homepage": { "$ref": "#/$defs/httpsUrl" },
+        "repository": {
+          "type": "object",
+          "required": ["type", "url", "directory"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "$ref": "#/$defs/nonEmptyString" },
+            "url": { "$ref": "#/$defs/nonEmptyString" },
+            "directory": { "$ref": "#/$defs/nonEmptyString" }
+          }
+        },
+        "icon": { "$ref": "#/$defs/httpsUrl" },
+        "iconDark": { "$ref": "#/$defs/httpsUrl" },
+        "act": { "$ref": "#/$defs/nonEmptyString" },
+        "publisher": {
+          "type": "object",
+          "required": ["name", "url"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "$ref": "#/$defs/nonEmptyString" },
+            "url": { "$ref": "#/$defs/nonEmptyString" },
+            "verified": {
+              "type": "boolean",
+              "description": "RESERVED for v1: absent. The official feed itself is the trust marker; verified activates with third-party feeds."
+            }
+          }
+        },
+        "source": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["type", "repo", "path", "ref"],
+              "additionalProperties": false,
+              "properties": {
+                "type": { "const": "github" },
+                "repo": { "$ref": "#/$defs/nonEmptyString" },
+                "path": { "$ref": "#/$defs/nonEmptyString" },
+                "ref": { "$ref": "#/$defs/nonEmptyString" }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["type", "package", "version"],
+              "additionalProperties": false,
+              "properties": {
+                "type": { "const": "npm" },
+                "package": { "$ref": "#/$defs/nonEmptyString" },
+                "version": { "$ref": "#/$defs/nonEmptyString" }
+              }
+            }
+          ]
+        },
+        "install": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/installTarget" }
+        },
+        "availability": { "enum": ["preview", "public"], "description": "Absent: public." },
+        "audience": {
+          "description": "Who sees the listing: the sha256 hex of act-audience/1:<account user id>, one per Act account. Absent: everyone.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+        },
+        "capabilities": {
+          "type": "object",
+          "required": ["can"],
+          "additionalProperties": false,
+          "properties": {
+            "can": { "$ref": "#/$defs/words" },
+            "cannot": { "$ref": "#/$defs/words" }
+          }
+        },
+        "untrusted": { "type": "boolean", "description": "Its results carry outside text, such as mail, that may try to instruct the agent." },
+        "limitedUse": { "type": "boolean", "description": "Google's Limited Use: its data reaches only model providers that never train on it." },
+        "sensitiveTools": {
+          "description": "Tool names, or prefixes ending in *, that start Off.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}\\*?$" }
+        }
+      }
+    }
+  }
+}

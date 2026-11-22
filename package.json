@@ -1,0 +1,22 @@
+{
+  "name": "act-marketplace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The official Act marketplace: the Claude Code plugin, the listings feed, Act's connectors, and the Act MCP server.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arcadia-eng/act-marketplace.git"
+  },
+  "homepage": "https://github.com/arcadia-eng/act-marketplace",
+  "type": "module",
+  "workspaces": ["servers/*"],
+  "scripts": {
+    "validate": "bun scripts/validate-listings.ts",
+    "test": "bun test",
+    "typecheck": "bun run --filter '@arcadia/act-mcp' typecheck"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1"
+  }
+}

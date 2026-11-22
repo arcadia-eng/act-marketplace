@@ -1,0 +1,125 @@
+---
+name: orchestrate
+description: Orchestrate a fleet of Act chats from Claude Code. Delegate, steer, check, and collect results across lanes and machines, and arm the watcher instead of polling. Use when the user wants several Act agents, lanes, or a long Act task.
+---
+
+# Orchestrating Act
+
+Act chats are the workers. You are the outer agent. The tools are on the `act` MCP server. One chat, one lane key, for its whole life.
+
+## Start
+
+1. `act_status` once. It is the runnable models, plan usage, projects, and how many chats are in each state.
+2. `act_machines` when the work might run somewhere other than this machine. Only `online` and `degraded` machines take calls.
+3. Give every line of work its own `lane` on `act_delegate`. Continue that chat with `act_steer` on the same `threadId`. A second delegate opens a second chat.
+
+## Delegate
+
+`act_delegate` takes `prompt`, and optionally `workspace`, `projectId`, `title`, `model`, `effort`, `multitask`, `machine`, `lane`, `ephemeral`, `onQuota`, `fallbacks`, `schema`.
+
+- `title` is the chat's row in the sidebar: 2 to 6 words, at most 40 characters ("Fix the login redirect"). The goal goes in the prompt. A longer title is not used: the chat titles itself from its first exchange and the answer's `titleNote` says why. An `act_configure` rename over 40 characters is refused (`title_too_long`) and nothing in the call changes. Omit it and Act titles the chat.
+
+- Omit `model` and `effort` unless the user named them or the models skill picked one. The server default is the right default.
+- Pass `multitask: false` for one line of work: most delegates, and every lane of a scan plan. The chat does the work itself and can still start Task workers. `multitask: true` makes the chat a coordinator over background workers that cannot delegate, so one line of work pays for three model layers reading the same brief, and each part costs a worker exit, a coordinator round and a resume. Pass true only when the work has two or more parts that can run at the same time in separate contexts. Omitted, it follows the project's setting, which may be on.
+- Omit `machine` for this machine. Pass a name from `act_machines` to run elsewhere, or `"auto"` when the user wants the load spread (the `vps-workers` skill). An explicit `machine` on one call does not change the session pick.
+- Several chats in one repository: `worktree: true` on each, so they never edit the same checkout. `repo` clones the repository onto the target machine first.
+- `ephemeral: true` is a throwaway scratch chat. Leave it off when the user should find the chat in the sidebar.
+- A lane that runs while nobody watches passes `onQuota: "wait"`: a spent plan or a rate limit parks it (state `parked`) and it goes on by itself at the reset, through a restart too. `onQuota: "fallback"` with `fallbacks` (up to 4 model ids, only ones the user is fine spending) moves it at once to the first listed model whose plan is open, and waits when none is. Without either the chat stops at the wall (`quota`) for you. Never list a model the user didn't pick: nothing outside `fallbacks` is used.
+- A review or a check whose answer you will read as data passes `schema` (a JSON Schema object, top level an object): the chat ends its turn by submitting a matching object, and the lane carries it as `result` (`resultError: "schema"` when it ended without one). Read `result`, never parse the prose.
+- A repository whose AGENTS.md has its own way to make a working tree for a line of work: make the tree that way and pass it as `workspace`, without `worktree: true`. Otherwise a chat works in the current directory, with `worktree: true` when several share it.
+- A folder no project has yet becomes one only where the user lets this client add projects. Without that, `act_delegate` and `act_create_project` refuse it with `grant_needed` (or `outside_grant` for a folder outside what was allowed), and `setting` names the place in Act (`Settings > App access > Apps > <client> > Add projects`). Ask the user to allow it there, then call again; meanwhile use an existing `projectId` from `closest` or `act_projects`. Never route around it through another folder.
+
+For background work, do not spend a subagent per chat: delegate, then arm the fleet watcher once per batch (next section). The `act:worker` subagent is only for one chat you want to block on inside the agent panel (it waits with `act_check` `waitSeconds: 600`); do not also arm a watcher for that chat, you would be woken twice.
+
+Results of `act_delegate`, `act_steer`, `act_retry` and the other tools that change a chat carry a brief lane (state, summary, held, error kind, next). Pass `full: true` only when you need the whole lane; `act_check` reads everything.
+
+## The watcher: one per batch
+
+Lanes you lead for longer than one wait go to the plugin's monitor instead ("Following everything you lead", below): it needs no arming. When you delegate a batch and do not want to sit in the wait, give the batch's lane keys one prefix (`lane: "oct9-reviews-diff"` and so on), then arm one watcher for the whole batch, not one per chat:
+
+```bash
+sh "${CLAUDE_PLUGIN_ROOT}/scripts/bun.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/watch.ts" --fleet --lane-prefix oct9-reviews --cursor /tmp/watch-oct9-reviews.json --machines "*"
+```
+
+Monitor, `timeout_ms` 1740000, `persistent` false (or run it as a background command: its exit wakes you). One line per chat that settles, needs input, hits a quota wall (with the reset time), starts waiting for its plan (`waiting for <model>'s plan until <time>`: it keeps watching, the chat goes on by itself), ends its turn onto a watch or background command of its own (`settled, its watch ... wakes it`, the watch's deadline named: not done, do not steer it; the turn it wakes is its settle) or has a workflow run asking, on any machine. It exits when the batch settles or a chat needs an answer, and prints a re-arm line at 29 minutes if work is still going; re-arm with the same `--cursor` file and it prints nothing twice.
+
+- `--machines "*"` covers this machine and every reachable one; name machines (`--machines vps-1,vps-2`) or watch one (`--machine vps-2`) instead. A remote machine's lines carry its name.
+- Without `--lane-prefix` it watches every chat on the machine, including the user's own; a prefix is the batch.
+- One workflow run (Workflows lab): `--run <wfr_id>` instead of `--fleet` (`--machine <name>` for a run on another machine); a line when it ends, pauses, waits on a plan reset, asks, or one of its agents parks or fails, and it exits on an end or an ask.
+- One chat only: `--thread <id>`.
+- The watcher needs the local app. On the hosted MCP with no local app, block on `act_fleet {waitSeconds}` instead.
+
+A chat you started can ask you while it keeps working (its AskParent): `asks while it works: <question> (1. … 2. …); answer with act_steer`. The watcher exits on it as on a question. Answer it at once with `act_steer {threadId, text}`: the chat reads it at its next step, and the result's `answers` names the question it closed. Don't wait for its turn to end, and re-arm afterwards. Until you answer, the question stays on the lane as `asking` (also past its turn's end) and the chat can ask nothing else; a question it put to an Act agent leading it is that agent's, and prints no line.
+
+A settle line carries the reply's first line and its closing paragraph (`done: <first line> … <closing paragraph>`), so a conclusion at the end of a long report reaches you. A turn that ends on a paragraph starting "Decision for the lead:" is `done, asks: <that paragraph>` (`turn done (background), asks:` while its workers go on, `done, landed #<pr>, asks:` when a landing came after it), and the watcher exits on it as on a question: answer it with `act_steer`. A done whose newest turn was its landing notice, its reply already told, is `landed #<pr>`, not a second done.
+
+## Following everything you lead: the plugin's monitor
+
+The plugin's monitor starts with every interactive Claude Code session and runs until the session ends: it is the wake of a lead that keeps many lanes, an agent chat and anything else going. Nothing to arm and nothing to re-arm. It follows what `follow.json` in the plugin's data folder names; add what you lead once:
+
+```bash
+CLAUDE_PLUGIN_DATA="${CLAUDE_PLUGIN_DATA}" sh "${CLAUDE_PLUGIN_ROOT}/scripts/bun.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/watch.ts" --follow --add --lane-prefix lead- --thread <agent chat id>
+```
+
+`--lane-prefix` and `--thread` repeat, agent chats included; `--machines "*"` (or names) reads other machines too; `--remove` with the same flags stops following them. The answer names the monitor that takes it up within 3 seconds, or says none runs and gives the command to arm by hand. The monitor prints the batch watcher's lines and nothing else: never a line while nothing it follows changes, never an exit on a settle, a question, a quiet fleet or an app restart. A filter you add tells what a person waits on and what settled in the last 15 minutes, not older history. When the local app has not answered for 2 minutes it says so once and keeps retrying; the lines it missed arrive once the app is back. What you follow stays in the file, so the next session's monitor follows it from its start; every interactive session on this machine with the plugin hears it, so remove what you no longer lead.
+
+A `-p` session runs no plugin monitor. There, and only there, arm Monitor by hand with `persistent: true` and no `timeout_ms` (the two conflict) on `sh "${CLAUDE_PLUGIN_ROOT}/scripts/bun.sh" "${CLAUDE_PLUGIN_ROOT}/scripts/watch.ts" --follow --forever --cursor "${CLAUDE_PLUGIN_DATA}/follow.json"`. Never arm a follow Monitor beside the plugin's: each tells the same lines.
+
+A session that should hear its chats with no watcher at all starts with the `act` channel (a Claude Code research preview: a warning dialog at each start, interactive sessions only):
+
+```bash
+ACT_CHANNEL=1 claude --dangerously-load-development-channels plugin:act@act-marketplace
+```
+
+The same lines then arrive as `<channel source="act" thread_id=… state=… lane=…>` events, for the chats this session delegates and for what `channel.json` in the plugin's data folder (`${CLAUDE_PLUGIN_DATA}`) names: `{"lanePrefixes": ["lead-"], "threads": ["<agent chat id>"]}`, read again when it changes. Act on them with the act tools; there is nothing to reply to and nothing to re-arm. Name a chat in `channel.json` or in `follow.json`, not both, or it is told twice. Without the channel, the monitor is the way.
+
+## Work orders that leave a decision
+
+End every work order with: "Ask me with AskParent when a question comes up whose answer changes what you deliver, and keep going; small choices are yours to make and mention in your report. Put a decision you still need when you finish in a closing paragraph that starts `Decision for the lead:`." The watcher turns the question into an `asks while it works` line and the paragraph into an `asks` line, and the chat finishes its turn instead of blocking on a question nobody may be watching. AskQuestion stays its form for a decision nothing can go on without.
+
+## Workflow runs
+
+When the `act` server lists `act_run_workflow` (the user turned workflow runs on in Act), staged programs of agents run in Act: a Claude Code workflow script mostly runs unchanged. Read `workflows.md` in this skill's folder before the first launch: what to change in a script, launching from a host chat, the watcher, answers, resume, and model picks.
+
+## While it runs
+
+- One chat: `act_check` with `waitSeconds` up to 900 on the local bridge (a hosted or proxied one cuts a wait to 55 and returns early). The call blocks. Do not issue another check of that chat until it returns.
+- The fleet: loop `act_fleet {waitSeconds: 900, cursor}`, passing back the opaque `cursor` each answer returns with the same filters. A call returns as soon as any matching chat changed state, including one outside the page, with ids in `waited.changed`. Read `nextPage` with `page` on one machine and keep the returned cursor for the next watch: changes during paging still wake it. `cursorReset: true` means the snapshot expired or the server restarted; resynchronize all pages before deciding the batch settled. No polling script. `machines: "*"` covers every machine. The watcher reads every snapshot page and stores opaque cursors plus deduplication marks in its `--cursor` file; never decode a fleet cursor.
+- `interrupted` with `crashResume: "pending"`: Act restarted and resumes that delegated turn on its own, once. Leave it. `crashResume: "skipped"` (it went down again inside the resume) or plain `interrupted`: `act_retry`. `unfinished` names what died with the turn (a Shell command); the agent is told to rerun it.
+- `act_steer` refuses an interrupted chat (code `interrupted`): `act_retry` continues the cut-off turn, then steer if you have more to say.
+- `needs_input`: `act_answer` with the user's answer. Do not invent one.
+- `parked`: the chat waits for its plan's reset and goes on by itself. Do not poll it, retry it or re-delegate it; the watcher or `act_fleet` tells you when it ends. `act_stop` ends the wait.
+- `quota` (a chat without `onQuota`): `act_retry {threadId, model}` moves it now, `act_retry {threadId, wait: true}` waits for the reset (a reset already past goes at once).
+- `open-todos` or `incomplete` on a settle is not done: it stopped with todos open and nothing running (`lane.openTodos` has the count and its last line) or a limit cut the turn (`lane.lastStopReason` says which). Steer it to go on, or ask for its report.
+- A follow-up is `act_steer`, not a new delegate. Continue a chat when the follow-up needs what it learned. Every lane says its size (`lane.context`, what its next request re-reads, as "742K of 1M tokens"): a new work order into a chat past half its window re-reads all of that on every round, so start it as a fresh chat on that chat's branch (`act_delegate` with a new lane and `base` its branch; the steer's hint names both).
+- Stop a chat with `act_stop`. Cancel one subagent with `act_cancel_task`.
+- `act_tasks {threadId}` keeps active tasks and five recent finished summaries, with counts for the rest. Use `state`, `filter`, `limit` and `cursor: nextCursor` for older tasks. Workflow tasks contain compact agent status only: read `act_workflows {runId}` for progress and results, not the task's step list. A running workflow agent's old quota reason is not a live wait; `continued` counts its continuations. Model skips are grouped with the affected-call count.
+- `act_configure` returns a brief lane plus the settings and chat fields that changed, not a raw thread. `full: true` returns the complete lane.
+
+## Load and caps
+
+No machine caps or holds delegated turns by default: they start at once however loaded the machine is. A turn waits (state `queued`, `held.reason` and `held.limit` name the limit) only behind a limit the user set: a cap or load hold on its machine (`act_configure_machine`: `perMachine`, `perClient`, `perProject`, `loadPerCore`, `memAvailableMinMb`, `memoryPressureLevel`, all 0 until set), a project's own cap (`act_configure_project {projectId, admission: {perClient, perProject}}`), or a drain. It starts on its own; never retry a queued chat. Set a limit only when the user asks for one. The user's own sends in the app are never held.
+
+Project folders: `act_configure_project {projectId, folders: [primary, ...extra]}` is the full ordered list; the first is the chat cwd and cannot move, the rest are added, removed or reordered.
+
+## Agents
+
+`act_configure_agent` sets up one of the user's named agents (not a chat): `agent` by id or exact name, and any of `name`, `description`, `instructions` (they replace `AGENTS.md` in its home), `section` (id, or a path such as `Northwind/Legal` whose missing sections are made, or null), `projects` (project ids, first is its default), `fallbacks` (up to 4 `{model, effort}`, model ids and levels from `act_models`), `showWork`. Only the fields you pass change. Moving into an Act agent means writing the instructions it lives by, binding its projects, and setting its fallbacks in one call.
+
+- It needs the user's per-client permission on that machine, off by default. A refusal is `grant_needed`, and `setting` names the place (`Settings > App access > Apps > <client> > Configure agents`). Ask the user to allow it there, then call again.
+- Limits, allowed models, pause, lock and memory switches are the user's in the app: the tool cannot set them, and the server refuses them to terminal and MCP callers alike.
+- Every change is attributed to this client (the agent's transcript notice and the action log name it). Set an agent up the way the user asked, no further.
+
+## Collect
+
+`act_fleet` past ten chats answers brief rows (state, a one-line `summary`, what it waits on or failed on), with what the rows share once in `common`: it fits in one answer, so read it as is, never with a parser. `brief: false` with the thread ids when you need the replies. `lane.lastReply.text` is the answer. `lane.error` says whether a failure is worth retrying, and `lane.error.next` is the call.
+
+A lane key finds its chat: `act_fleet` with `lane`.
+
+## Before the session ends: hand chats off
+
+A chat you started that still matters when this session ends would be left with nobody watching it. Hand it to an Act agent with `act_handoff {threadIds, agent}` (or `lanePrefix` for a batch; `machine` when the chats live elsewhere): the agent hears each one once it settles, steers it, and reports to the user. You can hand any chat that isn't an agent's own, whoever started it, and the hand-off is attributed to your client; an agent's own chat answers `agent_chat` and an archived one `archived`. The lanes then carry `handedTo`; your own `act_steer` still reaches them, as the user's message, so tell the agent rather than steering past it.
+
+A worktree chat's branch is in `act_check` `reply.git`, its `source` saying where its work stands (landed, open, needs-repair or parked). Land it with `act_merge_worktree` (onto that machine's checkout's branch) or `act_push_worktree` (onto the remote's tip, pushed never forced; then fetch it here). A conflict (`needs_repair`) changes nothing and goes to the chat itself, with the hunks; land it again once it says it is resolved.
+
+A repository whose main moves only through its own landing script is never landed with those tools: steer the chat to push its branch (`git push -u origin HEAD` in its worktree), then land that branch the way the repository's AGENTS.md says.
