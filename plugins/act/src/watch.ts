@@ -62,15 +62,12 @@ const IN_FLIGHT = new Set(["new", "running", "queued", "background", "compacting
 const SETTLED_ORDER = ["done", "open-todos", "incomplete", "stopped", "quota", "failed", "interrupted"] as const;
 const SETTLED = new Set<string>(SETTLED_ORDER);
 
-// The wire keeps `done` on such a lane; src/ontology/product/open-todos.ts (mirrored here)
-// is the derivation every surface shares.
 const OPEN_TODOS = "open-todos";
 const laneOpenTodos = (l: Pick<LaneSnap, "state" | "openTodos" | "shells" | "watches">): LaneSnap["openTodos"] =>
   l.state === "done" && !l.shells?.length && !l.watches?.length ? l.openTodos : undefined;
 export const rowSettledOnOwnWork = (l: LaneSnap): boolean =>
   l.state === "done" && !l.live && (l.shells?.length ?? 0) + (l.watches?.length ?? 0) > 0;
 const openTodosLine = (n: number): string => `stopped with ${n} open ${n === 1 ? "todo" : "todos"}, nothing running`;
-/** endedHow (src/server/lanes.ts) on the stop reasons that settle a lane `incomplete`. */
 const incompleteHow = (stop: string | undefined): string => {
   const s = stop ?? "limit";
   return s === "max_rounds" ? "hit the round limit"
@@ -102,7 +99,6 @@ const errTail = (text?: string, chars = 240) => {
 /** The first line's share of a settle line, and the closing paragraph's (whole sentences). */
 export const GIST_FIRST = 200;
 export const GIST_CLOSING = 600;
-/** The lanes excerpt's cut (src/server/lanes.ts excerpt): head, this marker, tail. */
 const OMITTED = /\n…\[\d+ chars omitted\]…\n/;
 /** The convention the orchestrate skill gives work orders: a closing paragraph the lead must answer. */
 const DECISION = /^[*_#>\s]*decision for the lead\s*:\s*(?:\*\*|__)?\s*/i;
@@ -380,10 +376,6 @@ export function fleetDeadline(rows: FleetRow[], moreMarks?: Iterable<string>): s
   return `[act] fleet still working${parts ? ` (${parts})` : ""}. Arm the watcher again.`;
 }
 
-/**
- * The lanes cursor (src/server/lane-cursor.ts): every chat the read matched, not the page `limit` cut it to.
- * Null when the string is not one of those cursors.
- */
 export function decodeFleetCursor(cursor: string): Map<string, string> | null {
   try {
     const v: unknown = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8"));

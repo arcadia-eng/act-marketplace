@@ -33,8 +33,8 @@ async function probe(): Promise<{ appUp: boolean; bridgeUp: boolean }> {
 
 async function runStdio(bridge: Bridge, actUrl: string): Promise<void> {
   console.error(`act mcp: stdio bridge (${bridge.entry}) → ${actUrl}`);
-  // in the session's folder: none of its .env or bunfig.toml (scripts/bun.sh)
-  const proc = Bun.spawn([bridge.bun, "--no-env-file", "--config=/dev/null", bridge.entry], {
+  // in the session's folder: none of its .env, bunfig.toml or tsconfig.json (scripts/bun.sh)
+  const proc = Bun.spawn([bridge.bun, "--no-env-file", "--config=/dev/null", "--tsconfig-override=/dev/null", bridge.entry], {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

@@ -1,24 +1,11 @@
-// Loopback reads of the Act app. The headers are the same contract the
-// MCP bridge sends (`x-act-client: mcp`, and the app session from the
-// home's app-session.key: src/server/ontology/principal.ts forwardedHeaders).
-
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
 export const CLIENT_HEADER = "x-act-client";
-/** The header the app's server admits a local client by (principal.ts SESSION_HEADER). */
 export const SESSION_HEADER = "x-act-session";
-/**
- * The header a long poll states its hold with (src/network/protocol.ts HOLD_HEADER). A relayed wait without it is cut
- * at the relay's short call timeout, so any request that waits sends it.
- */
 export const HOLD_HEADER = "act-hold";
 
-/**
- * A machine of this account, as this server's relay reaches it (src/network/routes.ts, the same surface
- * src/mcp/client.ts forMachine uses): its whole API answers under /api/network/machines/<ref>, name or id.
- */
 export function machineBase(base: string, ref: string): string {
   return `${base.replace(/\/$/, "")}/api/network/machines/${encodeURIComponent(ref)}`;
 }
