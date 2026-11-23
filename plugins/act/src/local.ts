@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -18,15 +18,17 @@ function appHome(env: Record<string, string | undefined>): string {
 }
 
 /**
- * The app session this machine's Act home holds (appHome), for a loopback base only: the app's server answers no
- * /api request without it. Empty before the app has ever run.
+ * The local session this machine's Act home holds (appHome), for a loopback base only: the app's server answers no
+ * /api request without it. Empty before the app has ever run. An app from before it kept the old file, which every
+ * start of a newer one deletes: while it is there, it is the running app's.
  */
 export function sessionHeaders(base: string, env: Record<string, string | undefined> = process.env): Record<string, string> {
   let host: string;
   try { host = new URL(base).hostname; } catch { return {}; }
   if (!LOOPBACK.has(host)) return {};
   try {
-    const secret = readFileSync(join(appHome(env), "app-session.key"), "utf8").trim();
+    const old = join(appHome(env), "app-session.key");
+    const secret = readFileSync(existsSync(old) ? old : join(appHome(env), "local-session.key"), "utf8").trim();
     return secret ? { [SESSION_HEADER]: secret } : {};
   } catch { return {}; }
 }

@@ -5,7 +5,7 @@ description: Pick an Act model from provider quotas. Use when the user wants a m
 
 # Pick a model by quota
 
-The canonical document is `GET /api/providers` on the local Act app (`http://127.0.0.1:8789/api/providers`, or `ACT_URL`), with the header `x-act-session: <the contents of ~/.act/app-session.key>` (the app answers no request without it). One shape for every provider: `connection`, `plan`, `meters` (`leftPercent`, `exhausted`, `resetsAt`), `metered`, `accounts`. No tokens, no keys.
+The canonical document is `GET /api/providers` on the local Act app (`http://127.0.0.1:8789/api/providers`, or `ACT_URL`), with the header `x-act-session: <the contents of ~/.act/local-session.key>` (the app answers no request without it). One shape for every provider: `connection`, `plan`, `meters` (`leftPercent`, `exhausted`, `resetsAt`), `metered`, `accounts`. No tokens, no keys.
 
 - `?refresh=none` reads the local snapshot and does not dial the providers.
 - The default answers from the last reading at once (each meter carries its `observedAt`) and re-reads what is stale behind the answer.

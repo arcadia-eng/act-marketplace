@@ -1,7 +1,7 @@
 {
   "name": "act",
   "displayName": "Act",
-  "version": "0.1.61",
+  "version": "0.1.62",
   "description": "Drive an Arcadia account from Claude Code: delegate work onto Act models and machines, steer fleets, read quotas, and review a chat's diff. Uses the local app when it is up, otherwise the hosted MCP with OAuth.",
   "author": {
     "name": "Arcadia",
