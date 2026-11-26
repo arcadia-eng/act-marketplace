@@ -52,4 +52,4 @@ A machine with `autoUpdate.on` installs each new signed release by itself within
 ## 5. Clean up
 
 - `act_archive {threadIds, removeWorktree: true}` removes worktrees whose commits are merged or pushed and says why it kept any.
-- `act_delete_project {machine, projectId}` for scratch projects. Its chats' clean, merged or pushed worktrees go with it; `worktreesKept` names any holding unpushed work. A cloned checkout stays on disk (reused next time); remove it on the box if it was scratch. Leave the user's own repositories.
+- `act_delete_project {machine, projectId}` for scratch projects, once their chats are archived. Its chats move to the box's Scratch, each keeping its worktree, and nothing is deleted. A cloned checkout stays on disk (reused next time); remove it on the box if it was scratch. Leave the user's own repositories.
