@@ -201,7 +201,7 @@ export function watchEvent(threadId: string, lane: LaneSnap | null, x: WatchExtr
     return say("needs_input", q ? `needs input: ${q}` : "needs input");
   }
   if ((x.runsAsking ?? 0) > 0) return say("workflow_asks", `workflow asks (${x.runsAsking} open)`);
-  const ask = lane.asking && lane.asking.to?.kind !== "agent" ? lane.asking : undefined;
+  const ask = lane.asking && (!lane.asking.to || lane.asking.to.kind === "mcp") ? lane.asking : undefined;
   if (ask && (lane.live || lane.working) && !x.askTold) {
     const options = ask.options?.length ? ` (${ask.options.map((o, i) => `${i + 1}. ${flat(o)}`).join(" ")})` : "";
     return say("asks", `asks while it works: ${sentencesWithin(ask.question, GIST_CLOSING)}${options}; answer with act_steer`);
